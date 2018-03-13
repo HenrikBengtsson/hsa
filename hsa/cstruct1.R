@@ -68,16 +68,15 @@ fmkorder_temp <- function(m, A, b, sigma, S) {
 fmkorder <- function(m, A, b, sigma, S) {
   temp <- fmkorder_temp(m, A, b, sigma, S)
   temp[, 2:4] <- solve(temp[, 2:4])
-  return(temp)
+  temp
 }
 
 fmkorder2 <- function(m, A, b, sigma) {
-  return(fmkorder(m, A, b, sigma, rep(0, 3)))
+  fmkorder(m, A, b, sigma, rep(0, 3))
 }
 
 fnormvec <- function(a, b) {
-  n <- c(a[2] * b[3] - a[3] * b[2], a[3] * b[1] - a[1] * b[3], a[1] * b[2] - a[2] * b[1])
-  return(n)
+  c(a[2] * b[3] - a[3] * b[2], a[3] * b[1] - a[1] * b[3], a[1] * b[2] - a[2] * b[1])
 }
 
 fangle <- function(a, b) {
@@ -126,7 +125,7 @@ tranS <- function(S1, S2, I_scale=T) {
     tmp <- tmp$par
     S <- t(t(S %*% angle2mat(tmp[4:6]) %*% fmirror(tmp[1:3])) + tmp[7:9])
   }
-  return(S)
+  S
 }
 
 rmol <- function(loci, P) {
@@ -608,7 +607,7 @@ subinitial <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, f
     P0 <- P
     u <- u + 1
   }
-  return(P)
+  P
 }
 
 suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdloglike, I_mle=T) {
