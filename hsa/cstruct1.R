@@ -2,7 +2,7 @@
 # Zou, C., Zhang, Y., Ouyang, Z. (2016) HSA: integrating multi-track Hi-C data for genome-scale reconstruction of 3D chromatin structure. Submitted.
 
 library(stats) # filter(), glm(), median(), rnorm(), splinefun()
-library(MASS)
+library(MASS)  # ginv()
 
 normP <- function(P) {
   P1 <- t(t(P) - colMeans(P))
@@ -34,6 +34,7 @@ momentum0 <- function(p0) {
   p0
 }
 
+#' @importFrom stats rnorm splinefun
 finistructure <- function(S0, bin) {
   n <- dim(S0)[1]
   N <- length(bin[, 1])
@@ -109,6 +110,7 @@ fmirror <- function(v) {
   y
 }
 
+#' @importFrom MASS ginv
 tranS <- function(S1, S2, I_scale = TRUE) {
   tmp <- cbind(1, S1)
   beta <- ginv(t(tmp) %*% tmp) %*% (t(tmp) %*% S2)
@@ -129,6 +131,7 @@ tranS <- function(S1, S2, I_scale = TRUE) {
   S
 }
 
+#' @importFrom stats median splinefun
 rmol <- function(loci, P) {
   n <- dim(P)[1]
   m <- dim(P)[2]
@@ -159,6 +162,7 @@ rmol <- function(loci, P) {
   P1
 }
 
+#' @importFrom stats filter
 avsmth <- function(bin, P) {
   N <- length(bin)
   # dP=sqrt(rowSums((P[-1,]-P[-N,])^2))
@@ -456,6 +460,8 @@ Leapfrog <- function(grad_U, L, epsilon, p0, q0, fM) {
   }
 }
 
+
+#' @importFrom stats rnorm
 HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans=FALSE) {
   N <- dim(current_q0)[1]
   m <- dim(current_q0)[2]
@@ -509,6 +515,8 @@ HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans=FALSE) {
   }
 }
 
+
+#' @importFrom stats rnorm
 HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans=FALSE) {
   N <- dim(current_q0)[1]
   m <- dim(current_q0)[2]
@@ -553,6 +561,8 @@ HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans=FALSE) {
   }
 }
 
+
+#' @importFrom stats rnorm
 Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
   # cat(c(length(pbin[1:N]),dim(mat[1:N,1:(N+1),]),dim(cx[1:N,1:N,])),"~")
   if (N == 2) {
@@ -656,6 +666,8 @@ piece <- function(theta0, P1, P2, pbin, A0, b0, invSigma0, beta1, covmat0, mat, 
   -floglike(cbind(pbin, rbind(P1, t(t(P2 %*% theta[-4, ]) + theta[4, ]))), A0, b0, invSigma0, beta1, covmat0, mat)
 }
 
+
+#' @importFrom stats rnorm
 finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdloglike) {
   N <- length(pbin)
   if (N <= 500) {
@@ -699,6 +711,7 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
 ## rmoutfiler remove outlier, defaulted to FALSE
 ## fitmode control parameter defaulted to 0
 
+#' @importFrom stats glm
 fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, epslon, mkfix=0, rho=0, mk, initialS=NULL, coarsefit=TRUE, rmoutlier=FALSE, fitmode=0) {
   floglike <- loglikelihood0 ## loglikelihood0 and dloglikelihood0 are functions
   fdloglike <- dloglikelihood0
