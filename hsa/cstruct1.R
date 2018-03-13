@@ -317,7 +317,7 @@ mkcloglikelihood <- function(theta, P0) {
   A <- matrix(theta[1:9], 3, 3)
   b <- theta[10:12]
   invSigma <- matrix(0, 3, 3)
-  invSigma[upper.tri(invSigma, diag = T)] <- theta[-c(1:12)]
+  invSigma[upper.tri(invSigma, diag = TRUE)] <- theta[-c(1:12)]
   invSigma <- invSigma + t(invSigma) - diag(diag(invSigma))
   sigma <- solve(invSigma)
   temp <- sapply(2:N, function(ii) {
@@ -892,8 +892,8 @@ fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, 
   betao <- Beta
   iternum <- 0
   P <- P01
-  write.table(cbind(bin, normP(Po)), file = paste(output, ".txt", sep = ""), sep = "\t", eol = "\n", row.names = F, col.names = F) ## Write out parameters
-  write.table(unlist(betao), file = paste(output, "beta.txt", sep = ""), sep = "\t", eol = "\n", row.names = F, col.names = F) ## Write out betas
+  write.table(cbind(bin, normP(Po)), file = paste(output, ".txt", sep = ""), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE) ## Write out parameters
+  write.table(unlist(betao), file = paste(output, "beta.txt", sep = ""), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE) ## Write out betas
   if (fitmode) { ## default to not fit mode
     fHMC <- HMC
     fknt <- kinetic
@@ -937,13 +937,13 @@ fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, 
     } ## If not Markov property normalize P
 
     if (mkfix & iternum >= 5) { ## Furth optimization not totally understood
-      thetam <- optim(c(as.vector(A0), b0, as.vector(invSigma0[upper.tri(invSigma0, diag = T)])), function(theta) -mkcloglikelihood(theta, cbind(pbin, P)))
+      thetam <- optim(c(as.vector(A0), b0, as.vector(invSigma0[upper.tri(invSigma0, diag = TRUE)])), function(theta) -mkcloglikelihood(theta, cbind(pbin, P)))
       thetam <- thetam$par
       # cat(thetam,"\n")
       A <- matrix(thetam[1:9], 3, 3)
       b <- thetam[10:12]
       invSigma <- matrix(0, 3, 3)
-      invSigma[upper.tri(invSigma, diag = T)] <- thetam[-c(1:12)]
+      invSigma[upper.tri(invSigma, diag = TRUE)] <- thetam[-c(1:12)]
       invSigma <- invSigma + t(invSigma) - diag(diag(invSigma))
       A0 <- A
       b0 <- b
@@ -1045,7 +1045,7 @@ fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, 
     if (iternum == (num_coarse - 1) && coarsefit) {
       P01 <- matrix(Pf, N, 3)
     }
-    write.table(cbind(bin, P), file = paste(output, "temp.txt", sep = ""), sep = "\t", eol = "\n", row.names = F, col.names = F)
+    write.table(cbind(bin, P), file = paste(output, "temp.txt", sep = ""), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
     recodllk[(iternum %% 7) + 1] <- Loglike > Loglike0
     if (Loglike > Loglike0) { ## If Loglike is greater than Loglike0, update
       Loglike0 <- Loglike
@@ -1058,8 +1058,8 @@ fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, 
       }
       betao <- Beta
       cat(bo, Ao, invSigmao, Loglike0, "\n")
-      write.table(cbind(bin, Po), file = paste(output, ".txt", sep = ""), sep = "\t", eol = "\n", row.names = F, col.names = F)
-      write.table(unlist(betao), file = paste(output, "beta.txt", sep = ""), sep = "\t", eol = "\n", row.names = F, col.names = F)
+      write.table(cbind(bin, Po), file = paste(output, ".txt", sep = ""), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
+      write.table(unlist(betao), file = paste(output, "beta.txt", sep = ""), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
     }
     # if(iternum>6&& !sum(recodllk)){P01=matrix(Pf,N,3)+matrix(rnorm(3*N,0,sqrt(5/N)),N,3)}
 
