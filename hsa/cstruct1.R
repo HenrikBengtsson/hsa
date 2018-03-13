@@ -46,7 +46,7 @@ finistructure <- function(S0, bin) {
     pts <- c(S0[, 1], S0[n, 2])
     Y <- as.matrix(rbind(S0[, 3:5], rnorm(3, as.numeric(S0[n, 3:5]), as.numeric(apply(S0[-1, 3:5] - S0[-n, 3:5], 2, sd)))))
     S <- normP(sapply(1:3, function(x) splinefun(pts, Y[, x])(bin[, 1])))
-    S <- S + matrix(rnorm(3 * N, 0, sqrt(5 / N)), N, 3)
+    S <- S + matrix(rnorm(3 * N, 0, sqrt(5 / N)), nrow = N, ncol = 3)
   }
   S
 }
@@ -164,7 +164,7 @@ avsmth <- function(bin, P) {
   P0 <- filter(P, rep(1, 3) / 3, sides = 2)
   P0[1, ] <- (P[1, ] + P[2, ]) / 2
   P0[N, ] <- (P[N, ] + P[N - 1, ]) / 2
-  P0 <- matrix(P0, N, 3)
+  P0 <- matrix(P0, nrow = N, ncol = 3)
 }
 
 loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos=NULL, v=NULL, mak=NULL) {
@@ -175,8 +175,8 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos=NULL, v=NULL, 
   C <- dim(cx)[3]
   if (is.na(C)) {
     C <- 1
-    cx <- array(cx, c(dim(cx), 1))
-    mat <- array(mat, c(dim(mat), 1))
+    cx <- array(cx, dim = c(dim(cx), 1))
+    mat <- array(mat, dim = c(dim(mat), 1))
   }
   if (is.null(pos)) {
     pos <- apply(mat, 3, function(x) which(!is.na(x[, 1])))
@@ -206,9 +206,9 @@ dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v=NULL, mak=
   }
   # pos=apply(mat,3,function(x) which(!is.na(x[,1])))
   # if(!is.list(pos)){pos=lapply(1:nrow(t(pos)),function(i) t(pos)[i,])}
-  dL <- matrix(0, N, 3)
+  dL <- matrix(0, nrow = N, ncol = 3)
   distmat <- as.matrix(dist(P))^2 # apply(P*P,1,sum)%*%t(rep(1,N))+rep(1,N)%*%t(apply(P*P,1,sum))-2*P%*%t(P)
-  temp <- matrix(0, N, N)
+  temp <- matrix(0, nrow = N, ncol = N)
   for (i in 1:C) {
     temp[pos[[i]], pos[[i]]] <- temp[pos[[i]], pos[[i]]] - beta[i] * cx[pos[[i]], pos[[i]], i] * (distmat[pos[[i]], pos[[i]]]^(beta[i] / 2 - 1))
     temp[pos[[i]], pos[[i]]][v[[i]]] <- temp[pos[[i]], pos[[i]]][v[[i]]] + beta[i] * mat[pos[[i]], pos[[i]] + 1, i][v[[i]]] / distmat[pos[[i]], pos[[i]]][v[[i]]]
@@ -232,8 +232,8 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos=NULL, v=NULL, m
   C <- dim(cx)[3]
   if (is.na(C)) {
     C <- 1
-    cx <- array(cx, c(dim(cx), 1))
-    mat <- array(mat, c(dim(mat), 1))
+    cx <- array(cx, dim = c(dim(cx), 1))
+    mat <- array(mat, dim = c(dim(mat), 1))
   }
   if (is.null(pos)) {
     pos <- apply(mat, 3, function(x) which(!is.na(x[, 1])))
@@ -273,13 +273,13 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v=NULL, mak=N
   # if(!is.list(pos)){pos=lapply(1:nrow(t(pos)),function(i) t(pos)[i,])}
   N <- dim(P)[1]
   C <- dim(cx)[3]
-  dL <- matrix(0, N, 3)
+  dL <- matrix(0, nrow = N, ncol = 3)
   if (is.null(v)) {
     v <- lapply(1:C, function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
   distmat <- as.matrix(dist(P))^2
   # distmat=apply(P*P,1,sum)%*%t(rep(1,N))+rep(1,N)%*%t(apply(P*P,1,sum))-2*P%*%t(P)
-  temp <- matrix(0, N, N)
+  temp <- matrix(0, nrow = N, ncol = N)
   for (i in 1:C) {
     temp[pos[[i]], pos[[i]]] <- temp[pos[[i]], pos[[i]]] - beta[i] * cx[pos[[i]], pos[[i]], i] * (distmat[pos[[i]], pos[[i]]]^(beta[i] / 2 - 1))
     temp[pos[[i]], pos[[i]]][v[[i]]] <- temp[pos[[i]], pos[[i]]][v[[i]]] + beta[i] * mat[pos[[i]], pos[[i]] + 1, i][v[[i]]] / distmat[pos[[i]], pos[[i]]][v[[i]]]
@@ -313,9 +313,9 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v=NULL, mak=N
 mkcloglikelihood <- function(theta, P0) {
   P <- P0[, -1]
   N <- dim(P)[1]
-  A <- matrix(theta[1:9], 3, 3)
+  A <- matrix(theta[1:9], nrow = 3, ncol = 3)
   b <- theta[10:12]
-  invSigma <- matrix(0, 3, 3)
+  invSigma <- matrix(0, nrow = 3, ncol = 3)
   invSigma[upper.tri(invSigma, diag = TRUE)] <- theta[-c(1:12)]
   invSigma <- invSigma + t(invSigma) - diag(diag(invSigma))
   sigma <- solve(invSigma)
@@ -327,19 +327,19 @@ mkcloglikelihood <- function(theta, P0) {
 }
 
 dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v=NULL) {
-  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matrix(theta[x - 1, 1:9], 3, 3)) + theta[x - 1, 10:12]))))
+  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matrix(theta[x - 1, 1:9], nrow = 3, ncol = 3)) + theta[x - 1, 10:12]))))
   P <- as.matrix(P)
   # sigma=solve(invSigma)
   N <- dim(P)[1]
   C <- dim(cx)[3]
   # cat(dim(theta),";")
-  dL <- matrix(0, dim(theta)[1], 12)
+  dL <- matrix(0, nrow = dim(theta)[1], ncol = 12)
   if (is.null(v)) {
     v <- lapply(1:C, function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
   distmat <- as.matrix(dist(P))^2
-  temp <- matrix(0, N, N)
-  dD <- array(0, c(N, N, 3))
+  temp <- matrix(0, nrow = N, ncol = N)
+  dD <- array(0, dim = c(N, N, 3))
   for (i in 1:C) {
     temp[pos[[i]], pos[[i]]] <- temp[pos[[i]], pos[[i]]] - beta[i] * cx[pos[[i]], pos[[i]], i] * (distmat[pos[[i]], pos[[i]]]^(beta[i] / 2 - 1))
     temp[pos[[i]], pos[[i]]][v[[i]]] <- temp[pos[[i]], pos[[i]]][v[[i]]] + beta[i] * mat[pos[[i]], pos[[i]] + 1, i][v[[i]]] / distmat[pos[[i]], pos[[i]]][v[[i]]]
@@ -364,24 +364,24 @@ dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v=NULL) 
 }
 
 rotamat <- function(theta) {
-  temp <- matrix(0, 3, 5)
-  temp[, 4:5] <- matrix(c(sin(theta[1:3]), cos(theta[1:3])), 3, 2)
+  temp <- matrix(0, nrow = 3, ncol = 5)
+  temp[, 4:5] <- matrix(c(sin(theta[1:3]), cos(theta[1:3])), nrow = 3, ncol = 2)
   temp[, 1:3] <- matrix(c(
-    temp[1, 5] * temp[3, 5] - temp[2, 5] * temp[1, 4] * temp[3, 4],
+     temp[1, 5] * temp[3, 5] - temp[2, 5] * temp[1, 4] * temp[3, 4],
     -temp[2, 5] * temp[3, 5] * temp[1, 4] - temp[1, 5] * temp[3, 4],
-    temp[1, 4] * temp[2, 4],
-    temp[3, 5] * temp[1, 4] + temp[1, 5] * temp[2, 5] * temp[3, 4],
-    temp[1, 5] * temp[2, 5] * temp[3, 5] - temp[1, 4] * temp[3, 4],
+     temp[1, 4] * temp[2, 4],
+     temp[3, 5] * temp[1, 4] + temp[1, 5] * temp[2, 5] * temp[3, 4],
+     temp[1, 5] * temp[2, 5] * temp[3, 5] - temp[1, 4] * temp[3, 4],
     -temp[1, 5] * temp[2, 4],
-    temp[2, 4] * temp[3, 4],
-    temp[3, 5] * temp[2, 4],
-    temp[2, 5]
-  ), 3, 3)
+     temp[2, 4] * temp[3, 4],
+     temp[3, 5] * temp[2, 4],
+     temp[2, 5]
+  ), nrow = 3, ncol = 3)
   temp
 }
 
 dDtotheta <- function(p, b, temp) {
-  l <- matrix(0, dim(b)[1], 3)
+  l <- matrix(0, nrow = dim(b)[1], ncol = 3)
   l[, 1] <- -2 * (p[2] * (-temp[2, 2]) - p[1] * temp[1, 2] - temp[3, 2] * p[3]) * (b[, 1] - p[1] * temp[1, 1] + p[2] * (-temp[2, 1]) - temp[3, 1] * p[3]) - 2 * (p[1] * temp[1, 1] - p[2] * (-temp[2, 1]) + temp[3, 1] * p[3]) * (b[, 2] - p[1] * temp[1, 2] + p[2] * (-temp[2, 2]) - temp[3, 2] * p[3])
 
   l[, 2] <- 2 * (temp[1, 5] * temp[3, 3] * p[3] + temp[1, 5] * temp[2, 3] * p[2] + temp[1, 5] * temp[1, 3] * p[1]) * (b[, 2] - p[1] * temp[1, 2] + p[2] * (-temp[2, 2]) - temp[3, 2] * p[3]) - 2 * (temp[3, 3] * temp[1, 4] * p[3] + temp[3, 5] * temp[3, 1] * p[2] + temp[1, 4] * temp[1, 3] * p[1]) * (b[, 1] - p[1] * temp[1, 1] + p[2] * (-temp[2, 1]) - temp[3, 1] * p[3]) + 2 * (temp[3, 3] * temp[3, 5] * p[2] - temp[2, 4] * p[3] + temp[3, 3] * temp[3, 4] * p[1]) * (temp[3, 3] * p[3] - b[, 3] + temp[2, 3] * p[2] + temp[1, 3] * p[1])
@@ -404,13 +404,13 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v=NULL)
   N <- dim(P)[1]
   C <- dim(cx)[3]
   # cat(dim(theta),";")
-  dL <- matrix(0, dim(theta)[1], 6)
+  dL <- matrix(0, nrow = dim(theta)[1], ncol = 6)
   if (is.null(v)) {
     v <- lapply(1:C, function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
   distmat <- as.matrix(dist(P))^2
-  temp <- matrix(0, N, N)
-  dD <- array(0, c(N, N, 3))
+  temp <- matrix(0, nrow = N, ncol = N)
+  dD <- array(0, dim = c(N, N, 3))
   for (i in 1:C) {
     temp[pos[[i]], pos[[i]]] <- temp[pos[[i]], pos[[i]]] - beta[i] * cx[pos[[i]], pos[[i]], i] * (distmat[pos[[i]], pos[[i]]]^(beta[i] / 2 - 1))
     temp[pos[[i]], pos[[i]]][v[[i]]] <- temp[pos[[i]], pos[[i]]][v[[i]]] + beta[i] * mat[pos[[i]], pos[[i]] + 1, i][v[[i]]] / distmat[pos[[i]], pos[[i]]][v[[i]]]
@@ -435,7 +435,7 @@ angle2mat <- function(theta) {
 }
 
 v2mat <- function(theta) {
-  matrix(theta[1:9], 3, 3)
+  matrix(theta[1:9], nrow = 3, ncol = 3)
 }
 
 Leapfrog <- function(grad_U, L, epsilon, p0, q0, fM) {
@@ -465,7 +465,7 @@ HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans=F) {
     # q=tranS(q,current_q)
   }
   # p = array(0,dim(q))
-  p <- array(rnorm(N * m, 0) / sqrt(N), dim(q)) # independent standard normal variates
+  p <- array(rnorm(N * m, 0) / sqrt(N), dim = dim(q)) # independent standard normal variates
   current_p <- p
   # Make a half step for momentum at the beginning
   p <- p - epsilon * grad_U(q) / 2
@@ -514,7 +514,7 @@ HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans=F) {
   current_q <- current_q0
   q <- current_q
   # p = array(0,dim(q))
-  p <- array(rnorm(N * m, 0) / sqrt(N), dim(q)) # independent standard normal variates
+  p <- array(rnorm(N * m, 0) / sqrt(N), dim = dim(q)) # independent standard normal variates
   current_p <- p
   # Make a half step for momentum at the beginning
   p <- p - epsilon * grad_U(q) / 2
@@ -571,8 +571,8 @@ Sis <- function(d, pbin, A, b, invSigma, beta, cx0, mat0, q0, fL) {
   N <- dim(mat0)[1]
   # cat(length(pbin),",")
   if (is.na(dim(cx0)[3])) {
-    cx <- array(cx0, c(dim(cx0), 1))
-    mat <- array(mat0, c(dim(mat0), 1))
+    cx <- array(cx0, dim = c(dim(cx0), 1))
+    mat <- array(mat0, dim = c(dim(mat0), 1))
   } else {
     cx <- cx0
     mat <- mat0
@@ -593,8 +593,8 @@ Sis <- function(d, pbin, A, b, invSigma, beta, cx0, mat0, q0, fL) {
 subinitial <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdloglike) {
   N <- length(pbin)
   if (is.na(dim(covmat0)[3])) {
-    covmat0 <- array(covmat0, c(dim(covmat0), 1))
-    mat <- array(mat, c(dim(mat), 1))
+    covmat0 <- array(covmat0, dim = c(dim(covmat0), 1))
+    mat <- array(mat, dim = c(dim(mat), 1))
   }
   pos <- apply(mat, 3, function(x) which(!is.na(x[, 1])))
   if (!is.list(pos)) {
@@ -615,8 +615,8 @@ suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike
   stp <- 35
   M <- 100
   if (is.na(dim(covmat0)[3])) {
-    covmat0 <- array(covmat0, c(dim(covmat0), 1))
-    mat <- array(mat, c(dim(mat), 1))
+    covmat0 <- array(covmat0, dim = c(dim(covmat0), 1))
+    mat <- array(mat, dim = c(dim(mat), 1))
   }
   pos <- apply(mat, 3, function(x) which(!is.na(x[, 1])))
   if (!is.list(pos)) {
@@ -651,7 +651,7 @@ suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike
 }
 
 piece <- function(theta0, P1, P2, pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike) {
-  theta <- matrix(theta0, 4, 3)
+  theta <- matrix(theta0, nrow = 4, ncol = 3)
   -floglike(cbind(pbin, rbind(P1, t(t(P2 %*% theta[-4, ]) + theta[4, ]))), A0, b0, invSigma0, beta1, covmat0, mat)
 }
 
@@ -668,12 +668,12 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
     index <- cbind(c(1, seq(m, N - m, by = m)), c(seq(m, N - m, by = m), N))
     index[-1, 1] <- index[-1, 1] + 1
     lP <- lapply(1:dim(index)[1], function(x) subinitial(pbin[index[x, 1]:index[x, 2]], A0, b0, invSigma0, beta1, covmat0[index[x, 1]:index[x, 2], index[x, 1]:index[x, 2], ], mat[index[x, 1]:index[x, 2], c(1, index[x, 1]:index[x, 2] + 1), ], floglike, fdloglike))
-    P <- matrix(0, N, 3)
+    P <- matrix(0, nrow = N, ncol = 3)
     P[index[1, 1]:index[1, 2], ] <- lP[[1]]
     for (i in 2:dim(index)[1])
     {
       theta <- optim(as.vector(rbind(diag(3), P[index[i - 1, 2], ] - P[index[i, 1], ] + rnorm(3) / 100)), function(x) piece(x, P[1:(index[i - 1, 2]), ], lP[[i]], pbin[1:index[i, 2]], A0, b0, invSigma0, beta1, covmat0[1:index[i, 2], 1:index[i, 2], ], mat[1:index[i, 2], c(1:(index[i, 2] + 1)), ], floglike))
-      theta <- matrix(theta$par, 4, 3)
+      theta <- matrix(theta$par, nrow = 4, ncol = 3)
       # cat(dim(theta),"\t")
       P[index[i, 1]:index[i, 2], ] <- lP[[i]] %*% theta[-4, ] + rep(1, index[i, 2] - index[i, 1] + 1) %*% t(theta[4, ])
     }
@@ -724,11 +724,11 @@ fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, 
   t <- c(0:(N - 1))
   invSigma0 <- diag(3) ## 3-dimensional identity matrix
   invS <- diag(3) * sqrt(N) ## diagonal matrix consisting of the square root of the number of bins
-  mat <- array(NA, c(N, N + 1, C)) ## 3-dimensional array of N by N+1 by C all filled with NAs
+  mat <- array(NA, dim = c(N, N + 1, C)) ## 3-dimensional array of N by N+1 by C all filled with NAs
   mat0 <- mat ## Same NA matrix as mat
   beta1 <- -rep(1.3, C) ## the number 1.3 repeated C times
   alpha <- seq(0.5, 1.5, 0.5) ## the squence 0.5, 1, 1.5
-  covmat0 <- array(1, c(N, N, C)) ## a N by N by C matrix of 1s
+  covmat0 <- array(1, dim = c(N, N, C)) ## a N by N by C matrix of 1s
   Beta <- vector("list", C) ## list same size as contact matrix
   impute <- 0
   pos <- vector("list", C) ## list same size as contact matrix
@@ -815,7 +815,7 @@ fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, 
     }
     P01 <- P10
     dmat <- as.matrix(dist(P10))
-    covmat0 <- array(1, c(N, N, C)) ## covmat0 re-written as 3-dimensional array of 1s
+    covmat0 <- array(1, dim = c(N, N, C)) ## covmat0 re-written as 3-dimensional array of 1s
     for (c in 1:C) { ## why a second round of Poisson regression? This loop same as above
       dmat1 <- dmat[pos[[c]], pos[[c]]] ## distance between bins that actually exists within contact matrices
       dmat1 <- dmat1[upper.tri(dmat1)] ## upper triangular version of dmat1
@@ -939,9 +939,9 @@ fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, 
       thetam <- optim(c(as.vector(A0), b0, as.vector(invSigma0[upper.tri(invSigma0, diag = TRUE)])), function(theta) -mkcloglikelihood(theta, cbind(pbin, P)))
       thetam <- thetam$par
       # cat(thetam,"\n")
-      A <- matrix(thetam[1:9], 3, 3)
+      A <- matrix(thetam[1:9], nrow = 3, ncol = 3)
       b <- thetam[10:12]
-      invSigma <- matrix(0, 3, 3)
+      invSigma <- matrix(0, nrow = 3, ncol = 3)
       invSigma[upper.tri(invSigma, diag = TRUE)] <- thetam[-c(1:12)]
       invSigma <- invSigma + t(invSigma) - diag(diag(invSigma))
       A0 <- A
@@ -953,7 +953,7 @@ fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, 
       invSigma <- invSigma0
     }
     # cat(loglikelihood(P,A,b,invSigma,beta1,covmat0,mat),"\n")
-    covmat0 <- array(1, c(N, N, C))
+    covmat0 <- array(1, dim = c(N, N, C))
     dmat <- as.matrix(dist(P))
     for (c in 1:C) { ## yet another Poisson regression fit separately by contact matrix
       dmat1 <- dmat[pos[[c]], pos[[c]]]
@@ -1014,7 +1014,7 @@ fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, 
       if (usLoglike <= sLoglike) {
         Loglike <- sLoglike
         beta1 <- tmp_opt$par
-        P <- beta1[1] * matrix(Pf, N, 3)
+        P <- beta1[1] * matrix(Pf, nrow = N, ncol = 3)
         beta1 <- beta1[-1]
       }
     }
@@ -1027,7 +1027,7 @@ fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, 
       if (!(Loglike > sLoglike || (any(beta2 > -1) && runif(1) < 0.5))) {
         Loglike <- sLoglike
         beta1 <- tmp_opt$par
-        P <- beta1[1] * matrix(Pf, N, 3)
+        P <- beta1[1] * matrix(Pf, nrow = N, ncol = 3)
         beta1 <- beta1[-1]
       }
     } else { ## greater than 1000 bins do another optimization
@@ -1035,14 +1035,14 @@ fmain <- function(lsmap0, lscov0, output, Maxiter, submaxiter, lamda, Leapfrog, 
       cat("LLK before and after smoothing:", c(Loglike, sLoglike), "\n")
       if (!(Loglike > sLoglike || (any(beta2 > -1) && runif(1) < 0.5))) {
         Loglike <- sLoglike
-        P <- matrix(Pf, N, 3)
+        P <- matrix(Pf, nrow = N, ncol = 3)
       }
     }
 
     beta1 <- pmin(beta1, ifelse(iternum > 10, -0.6, -1))
     P01 <- P
     if (iternum == (num_coarse - 1) && coarsefit) {
-      P01 <- matrix(Pf, N, 3)
+      P01 <- matrix(Pf, nrow = N, ncol = 3)
     }
     write.table(cbind(bin, P), file = paste(output, "temp.txt", sep = ""), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
     recodllk[(iternum %% 7) + 1] <- Loglike > Loglike0
