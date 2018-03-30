@@ -747,7 +747,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       dmat1 <- dmat[pos[[c]], pos[[c]]]
       dmat1 <- dmat1[upper.tri(dmat1)]
       gldata[[c]][, dim(gldata[[c]])[2]] <- log(dmat1)
-      colnames(gldata[[c]]) <- paste("V", 1:dim(gldata[[c]])[2], sep = "")
+      colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
       Beta[[c]] <- as.vector(betaest$coefficients)
       cat(Beta[[c]], "\n")
@@ -777,7 +777,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
         gldata[[c]] <- cbind(temp[upper.tri(temp)], sapply(lscov[[c]], FUN = function(x) log(x[upper.tri(x)])))
       }
       gldata[[c]] <- data.frame(gldata[[c]])
-      colnames(gldata[[c]]) <- paste("V", 1:dim(gldata[[c]])[2], sep = "")
+      colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
       gldata[[c]] <- cbind(gldata[[c]], rep(1, times = dim(gldata[[c]])[1]))
       Beta[[c]] <- c(as.vector(betaest$coefficients), beta1[c])
@@ -803,7 +803,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       dmat1 <- dmat[pos[[c]], pos[[c]]]
       dmat1 <- dmat1[upper.tri(dmat1)]
       gldata[[c]][, dim(gldata[[c]])[2]] <- log(dmat1)
-      colnames(gldata[[c]]) <- paste("V", 1:dim(gldata[[c]])[2], sep = "")
+      colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
       Beta[[c]] <- as.vector(betaest$coefficients)
       cat(Beta[[c]], "\n")
@@ -874,8 +874,8 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   betao <- Beta
   iternum <- 0
   P <- P01
-  write.table(cbind(bin, normP(Po)), file = paste(outfile, ".txt", sep = ""), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
-  write.table(unlist(betao), file = paste(outfile, "beta.txt", sep = ""), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
+  write.table(cbind(bin, normP(Po)), file = paste0(outfile, ".txt"), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
+  write.table(unlist(betao), file = paste0(outfile, "beta.txt"), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
   if (fitmode) {
     fHMC <- HMC
     fknt <- kinetic
@@ -942,7 +942,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       dmat1 <- dmat[pos[[c]], pos[[c]]]
       dmat1 <- dmat1[upper.tri(dmat1)]
       gldata[[c]][, dim(gldata[[c]])[2]] <- log(dmat1)
-      colnames(gldata[[c]]) <- paste("V", 1:dim(gldata[[c]])[2], sep = "")
+      colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
       Beta[[c]] <- as.vector(betaest$coefficients)
       cat(iternum, ": ", Beta[[c]], "\n")
@@ -1027,7 +1027,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     if (iternum == (num_coarse - 1) && coarsefit) {
       P01 <- matrix(Pf, nrow = N, ncol = 3)
     }
-    write.table(cbind(bin, P), file = paste(outfile, "temp.txt", sep = ""), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
+    write.table(cbind(bin, P), file = paste0(outfile, "temp.txt"), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
     recodllk[(iternum %% 7) + 1] <- Loglike > Loglike0
     if (Loglike > Loglike0) {
       Loglike0 <- Loglike
@@ -1040,8 +1040,8 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       }
       betao <- Beta
       cat(bo, Ao, invSigmao, Loglike0, "\n")
-      write.table(cbind(bin, Po), file = paste(outfile, ".txt", sep = ""), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
-      write.table(unlist(betao), file = paste(outfile, "beta.txt", sep = ""), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
+      write.table(cbind(bin, Po), file = paste0(outfile, ".txt"), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
+      write.table(unlist(betao), file = paste0(outfile, "beta.txt"), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
     }
     # if(iternum>6&& !sum(recodllk)){P01=matrix(Pf,N,3)+matrix(rnorm(3*N,0,sqrt(5/N)),N,3)}
 
