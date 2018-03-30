@@ -1,7 +1,7 @@
 source("hsa/cstruct1.R")
 
 outpath <- file.path("tests", ".checks")
-dir.create(outpath, recursive = TRUE)
+dir.create(outpath, recursive = TRUE, showWarnings = FALSE)
 outprefix <- file.path(outpath, "hap1_full_all_22_100000")
 cat(sprintf("Prefix of output files: %s\n", sQuote(outprefix)))
 
