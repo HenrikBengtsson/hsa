@@ -394,8 +394,8 @@ LLK before and after smoothing: 244.2109 232.2521 ( 0.8032123 -1.666825 )
 
 
 Files produced:
-- file 1: 'hap1_full_all_22_100000.txt' (23581 bytes; 52e5b10c66211940ac3c50cdd9e57c44)
-- file 2: 'hap1_full_all_22_100000beta.txt' (34 bytes; a1f2cf14e913a08e4673308f75d32666)
+- file 1: 'hap1_full_all_22_100000.txt' (22542 bytes; d8aaeeae5e2858bc6efe4b591a61c70a)
+- file 2: 'hap1_full_all_22_100000beta.txt' (32 bytes; 2d9495538f2020f6be5eea6f4944d766)
 
 
 
@@ -427,4 +427,4 @@ loaded via a namespace (and not attached):
 
 Processing time:
    user  system elapsed 
-264.128   0.168 264.383 
+263.336   0.236 263.723 
