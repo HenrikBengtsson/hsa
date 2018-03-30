@@ -918,7 +918,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       P <- normP(P)
     }
 
-    if (mkfix & iternum >= 5) {
+    if (mkfix && iternum >= 5) {
       thetam <- optim(c(as.vector(A0), b0, as.vector(invSigma0[upper.tri(invSigma0, diag = TRUE)])), fn = function(theta) -mkcloglikelihood(theta, cbind(pbin, P)))
       thetam <- thetam$par
       # cat(thetam,"\n")
