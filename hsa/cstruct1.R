@@ -41,8 +41,8 @@ finistructure <- function(S0, bin) {
     }
   } else {
     pts <- c(S0[, 1], S0[n, 2])
-    Y <- as.matrix(rbind(S0[, 3:5], rnorm(3, as.numeric(S0[n, 3:5]), as.numeric(apply(S0[-1, 3:5] - S0[-n, 3:5], 2, sd)))))
-    S <- normP(sapply(1:3, function(x) splinefun(pts, Y[, x])(bin[, 1])))
+    Y <- as.matrix(rbind(S0[, 3:5], rnorm(3, as.numeric(S0[n, 3:5]), as.numeric(apply(S0[-1, 3:5] - S0[-n, 3:5], MARGIN = 2L, FUN = sd)))))
+    S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin[, 1])))
     S <- S + matrix(rnorm(3 * N, 0, sqrt(5 / N)), N, 3)
   }
   S
@@ -93,7 +93,7 @@ fbead <- function(S1, S2) {
   n <- fnormvec(S[m, ] - S[1, ], S2[2, ] - S2[1, ])
   theta <- fangle(S[m, ] - S[1, ], S2[2, ] - S2[1, ])
   S <- t(t(S) - S[1, ])
-  S <- t(apply(S, 1, function(x) frotanyvec(x, n, theta)))
+  S <- t(apply(S, MARGIN = 1L, FUN = function(x) frotanyvec(x, n, theta)))
   S <- t(t(S) - S[1, ] + S1[1, ])
   S
 }
@@ -130,12 +130,12 @@ rmol <- function(loci, P) {
   n <- dim(P)[1]
   m <- dim(P)[2]
   P1 <- P
-  v <- sapply(1:m, function(x) is.na(P1[, x]) | is.infinite(P1[, x]))
+  v <- sapply(1:m, FUN = function(x) is.na(P1[, x]) | is.infinite(P1[, x]))
   if (any(v)) {
     outlier <- v[, 1] | v[, 2] | v[, 3]
     spf <- splinefun
     P2 <- P[!outlier, ]
-    tmp <- sapply(1:m, function(x) spf(loci[!outlier], P2[, x])(loci[outlier]))
+    tmp <- sapply(1:m, FUN = function(x) spf(loci[!outlier], P2[, x])(loci[outlier]))
     # print(tmp)
     P1[outlier, ] <- tmp
   }
@@ -177,13 +177,13 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
     mat <- array(mat, c(dim(mat), 1))
   }
   if (is.null(pos)) {
-    pos <- apply(mat, 3, function(x) which(!is.na(x[, 1])))
+    pos <- apply(mat, MARGIN = 3L, FUN = function(x) which(!is.na(x[, 1])))
     if (!is.list(pos)) {
-      pos <- lapply(1:nrow(t(pos)), function(i) t(pos)[i, ])
+      pos <- lapply(1:nrow(t(pos)), FUN = function(i) t(pos)[i, ])
     }
   }
   if (is.null(v)) {
-    v <- lapply(1:C, function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
+    v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
   distmat <- as.matrix(dist(P))
   for (i in 1:C) {
@@ -200,7 +200,7 @@ dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, ma
   N <- dim(P)[1]
   C <- dim(cx)[3]
   if (is.null(v)) {
-    v <- lapply(1:C, function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
+    v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
   # pos=apply(mat,3,function(x) which(!is.na(x[,1])))
   # if(!is.list(pos)){pos=lapply(1:nrow(t(pos)),function(i) t(pos)[i,])}
@@ -234,13 +234,13 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
     mat <- array(mat, c(dim(mat), 1))
   }
   if (is.null(pos)) {
-    pos <- apply(mat, 3, function(x) which(!is.na(x[, 1])))
+    pos <- apply(mat, MARGIN = 3L, FUN = function(x) which(!is.na(x[, 1])))
     if (!is.list(pos)) {
-      pos <- lapply(1:nrow(t(pos)), function(i) t(pos)[i, ])
+      pos <- lapply(1:nrow(t(pos)), FUN = function(i) t(pos)[i, ])
     }
   }
   if (is.null(v)) {
-    v <- lapply(1:C, function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
+    v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
   distmat <- as.matrix(dist(P))
   for (i in 1:C) {
@@ -251,12 +251,12 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
     # L=L+sum(temp[upper.tri(temp)])# +sum(temp[lower.tri(temp))
   }
   if (is.null(mak)) {
-    L <- L + sum(sapply(2:N, function(ii) {
+    L <- L + sum(sapply(2:N, FUN = function(ii) {
       nmp <- fmkorder(P0[ii, 1] - P0[ii - 1, 1], A, b, sigma, P[ii - 1, ])
       -(P[ii, ] - nmp[, 1]) %*% (nmp[, 2:4]) %*% (P[ii, ] - nmp[, 1]) / 2 + log(det(nmp[, 2:4])) / 2
     }) / N / 3)
   } else {
-    L <- L + sum(sapply(2:N, function(ii) {
+    L <- L + sum(sapply(2:N, FUN = function(ii) {
       mu <- mak[[ii - 1]][, 1] + mak[[ii - 1]][, 5:7] %*% P[ii - 1, ]
       -t(P[ii, ] - mu) %*% mak[[ii - 1]][, 2:4] %*% (P[ii, ] - mu) / 2 + log(det(mak[[ii - 1]][, 2:4])) / 2
     })) / N / 3
@@ -273,7 +273,7 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
   C <- dim(cx)[3]
   dL <- matrix(0, N, 3)
   if (is.null(v)) {
-    v <- lapply(1:C, function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
+    v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
   distmat <- as.matrix(dist(P))^2
   # distmat=apply(P*P,1,sum)%*%t(rep(1,N))+rep(1,N)%*%t(apply(P*P,1,sum))-2*P%*%t(P)
@@ -291,18 +291,18 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
   tmp <- temp * P[, 3]
   dL[, 3] <- colSums(t(tmp) - tmp) / N / 3
   if (is.null(mak)) {
-    nmp <- lapply(2:N, function(ii) fmkorder(P0[ii, 1] - P0[ii - 1, 1], A, b, sigma, P[ii - 1, ]))
-    temp1 <- sapply(2:N, function(ii) -t(P[ii, ] - nmp[[ii - 1]][, 1]) %*% nmp[[ii - 1]][, 2:4]) / N / 3
+    nmp <- lapply(2:N, FUN = function(ii) fmkorder(P0[ii, 1] - P0[ii - 1, 1], A, b, sigma, P[ii - 1, ]))
+    temp1 <- sapply(2:N, FUN = function(ii) -t(P[ii, ] - nmp[[ii - 1]][, 1]) %*% nmp[[ii - 1]][, 2:4]) / N / 3
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
-    temp2 <- sapply(1:(N - 1), function(ii) -t(nmp[[ii]][, 5:7]) %*% nmp[[ii]][, 2:4] %*% nmp[[ii]][, 5:7] %*% P[ii, ] - t(nmp[[ii]][, 5:7]) %*% nmp[[ii]][, 2:4] %*% (nmp[[ii]][, 1] - nmp[[ii]][, 5:7] %*% P[ii, ] - P[ii + 1, ])) / N / 3
+    temp2 <- sapply(1:(N - 1), FUN = function(ii) -t(nmp[[ii]][, 5:7]) %*% nmp[[ii]][, 2:4] %*% nmp[[ii]][, 5:7] %*% P[ii, ] - t(nmp[[ii]][, 5:7]) %*% nmp[[ii]][, 2:4] %*% (nmp[[ii]][, 1] - nmp[[ii]][, 5:7] %*% P[ii, ] - P[ii + 1, ])) / N / 3
     dL[1:(N - 1), ] <- dL[1:(N - 1), ] + t(temp2)
   } else {
-    temp1 <- sapply(2:N, function(ii) {
+    temp1 <- sapply(2:N, FUN = function(ii) {
       mu <- mak[[ii - 1]][, 1] + mak[[ii - 1]][, 5:7] %*% P[ii - 1, ]
       -t(P[ii, ] - mu) %*% mak[[ii - 1]][, 2:4]
     }) / N / 3
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
-    temp2 <- sapply(1:(N - 1), function(ii) -t(mak[[ii]][, 5:7]) %*% mak[[ii]][, 2:4] %*% mak[[ii]][, 5:7] %*% P[ii, ] - t(mak[[ii]][, 5:7]) %*% mak[[ii]][, 2:4] %*% (mak[[ii]][, 1] - P[ii + 1, ])) / N / 3
+    temp2 <- sapply(1:(N - 1), FUN = function(ii) -t(mak[[ii]][, 5:7]) %*% mak[[ii]][, 2:4] %*% mak[[ii]][, 5:7] %*% P[ii, ] - t(mak[[ii]][, 5:7]) %*% mak[[ii]][, 2:4] %*% (mak[[ii]][, 1] - P[ii + 1, ])) / N / 3
     dL[1:(N - 1), ] <- dL[1:(N - 1), ] + t(temp2)
   }
   dL
@@ -317,7 +317,7 @@ mkcloglikelihood <- function(theta, P0) {
   invSigma[upper.tri(invSigma, diag = TRUE)] <- theta[-c(1:12)]
   invSigma <- invSigma + t(invSigma) - diag(diag(invSigma))
   sigma <- solve(invSigma)
-  temp <- sapply(2:N, function(ii) {
+  temp <- sapply(2:N, FUN = function(ii) {
     nmp <- fmkorder(P0[ii, 1] - P0[ii - 1, 1], A, b, sigma, P[ii - 1, ])
     -(P[ii, ] - nmp[, 1]) %*% (nmp[, 2:4]) %*% (P[ii, ] - nmp[, 1]) / 2 + log(det(nmp[, 2:4])) / 2
   })
@@ -325,7 +325,7 @@ mkcloglikelihood <- function(theta, P0) {
 }
 
 dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
-  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matrix(theta[x - 1, 1:9], 3, 3)) + theta[x - 1, 10:12]))))
+  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], FUN = function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matrix(theta[x - 1, 1:9], 3, 3)) + theta[x - 1, 10:12]))))
   P <- as.matrix(P)
   # sigma=solve(invSigma)
   N <- dim(P)[1]
@@ -333,7 +333,7 @@ dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL
   # cat(dim(theta),";")
   dL <- matrix(0, dim(theta)[1], 12)
   if (is.null(v)) {
-    v <- lapply(1:C, function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
+    v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
   distmat <- as.matrix(dist(P))^2
   temp <- matrix(0, N, N)
@@ -351,13 +351,13 @@ dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL
   dD[, , 2] <- t(tmp) - tmp
   tmp <- temp * P[, 3]
   dD[, , 3] <- t(tmp) - tmp
-  tmp <- t(apply(index[-1, ], 1, function(x) c(colSums(dD[-(x[1]:x[2]), x[1]:x[2], 1] %*% P0[x[1]:x[2], -1]), colSums(dD[-(x[1]:x[2]), x[1]:x[2], 2] %*% P0[x[1]:x[2], -1]), colSums(dD[-(x[1]:x[2]), x[1]:x[2], 3] %*% P0[x[1]:x[2], -1])))) / N / 3
+  tmp <- t(apply(index[-1, ], MARGIN = 1L, FUN = function(x) c(colSums(dD[-(x[1]:x[2]), x[1]:x[2], 1] %*% P0[x[1]:x[2], -1]), colSums(dD[-(x[1]:x[2]), x[1]:x[2], 2] %*% P0[x[1]:x[2], -1]), colSums(dD[-(x[1]:x[2]), x[1]:x[2], 3] %*% P0[x[1]:x[2], -1])))) / N / 3
   dL[, 1:9] <- tmp # t(apply(index[-1,],1,function(x) c(colSums(dD[-(x[1]:x[2]),x[1]:x[2],1]%*%P0[x[1]:x[2],-1]),colSums(dD[-(x[1]:x[2]),x[1]:x[2],2]%*%P0[x[1]:x[2],-1]),colSums(dD[-(x[1]:x[2]),x[1]:x[2],3]%*%P0[x[1]:x[2],-1]))))/N/3
-  dL[, 1:9] <- dL[, 1:9] + t(apply(index[-1, ], 1, function(x) c(sapply(2:4, function(k) c(sum(upper.tri(t(dD[x[1]:x[2], x[1]:x[2], 1] * P0[x[1]:x[2], k])) - upper.tri(dD[x[1]:x[2], x[1]:x[2], 1] * P0[x[1]:x[2], k])), sum(upper.tri(t(dD[x[1]:x[2], x[1]:x[2], 2] * P0[x[1]:x[2], k])) - upper.tri(dD[x[1]:x[2], x[1]:x[2], 2] * P0[x[1]:x[2], k])), sum(upper.tri(t(dD[x[1]:x[2], x[1]:x[2], 3] * P0[x[1]:x[2], k])) - upper.tri(dD[x[1]:x[2], x[1]:x[2], 3] * P0[x[1]:x[2], k]))))))) / N / 3
+  dL[, 1:9] <- dL[, 1:9] + t(apply(index[-1, ], MARGIN = 1L, FUN = function(x) c(sapply(2:4, FUN = function(k) c(sum(upper.tri(t(dD[x[1]:x[2], x[1]:x[2], 1] * P0[x[1]:x[2], k])) - upper.tri(dD[x[1]:x[2], x[1]:x[2], 1] * P0[x[1]:x[2], k])), sum(upper.tri(t(dD[x[1]:x[2], x[1]:x[2], 2] * P0[x[1]:x[2], k])) - upper.tri(dD[x[1]:x[2], x[1]:x[2], 2] * P0[x[1]:x[2], k])), sum(upper.tri(t(dD[x[1]:x[2], x[1]:x[2], 3] * P0[x[1]:x[2], k])) - upper.tri(dD[x[1]:x[2], x[1]:x[2], 3] * P0[x[1]:x[2], k]))))))) / N / 3
 
-  dL[, 10] <- apply(index[-1, ], 1, function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 1])) / N / 3
-  dL[, 11] <- apply(index[-1, ], 1, function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 2])) / N / 3
-  dL[, 12] <- apply(index[-1, ], 1, function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 3])) / N / 3
+  dL[, 10] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 1])) / N / 3
+  dL[, 11] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 2])) / N / 3
+  dL[, 12] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 3])) / N / 3
   dL
 }
 
@@ -395,8 +395,8 @@ dDtotheta <- function(p, b, temp) {
 }
 
 dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
-  matheta <- lapply(2:dim(index)[1], function(x) rotamat(theta[x - 1, ]))
-  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matheta[[x - 1]][, 1:3]) + theta[x - 1, 4:6]))))
+  matheta <- lapply(2:dim(index)[1], FUN = function(x) rotamat(theta[x - 1, ]))
+  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], FUN = function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matheta[[x - 1]][, 1:3]) + theta[x - 1, 4:6]))))
   P <- as.matrix(P)
   # sigma=solve(invSigma)
   N <- dim(P)[1]
@@ -404,7 +404,7 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NUL
   # cat(dim(theta),";")
   dL <- matrix(0, dim(theta)[1], 6)
   if (is.null(v)) {
-    v <- lapply(1:C, function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
+    v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
   distmat <- as.matrix(dist(P))^2
   temp <- matrix(0, N, N)
@@ -421,10 +421,10 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NUL
   dD[, , 2] <- t(tmp) - tmp
   tmp <- temp * P[, 3]
   dD[, , 3] <- t(tmp) - tmp
-  dL[, 1:3] <- t(sapply(2:dim(index)[1], function(x) rowSums(sapply(index[x, 1]:index[x, 2], function(i) colSums(dDtotheta(P0[i, -1], t(t(P[-(index[x, 1]:index[x, 2]), ]) - theta[x - 1, 4:6]), matheta[[x - 1]]) * temp[-(index[x, 1]:index[x, 2]), i])))))
-  dL[, 4] <- apply(index[-1, ], 1, function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 1]))
-  dL[, 5] <- apply(index[-1, ], 1, function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 2]))
-  dL[, 6] <- apply(index[-1, ], 1, function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 3]))
+  dL[, 1:3] <- t(sapply(2:dim(index)[1], FUN = function(x) rowSums(sapply(index[x, 1]:index[x, 2], FUN = function(i) colSums(dDtotheta(P0[i, -1], t(t(P[-(index[x, 1]:index[x, 2]), ]) - theta[x - 1, 4:6]), matheta[[x - 1]]) * temp[-(index[x, 1]:index[x, 2]), i])))))
+  dL[, 4] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 1]))
+  dL[, 5] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 2]))
+  dL[, 6] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 3]))
   dL / N / 3
 }
 
@@ -595,9 +595,9 @@ subinitial <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, f
     covmat0 <- array(covmat0, c(dim(covmat0), 1))
     mat <- array(mat, c(dim(mat), 1))
   }
-  pos <- apply(mat, 3, function(x) which(!is.na(x[, 1])))
+  pos <- apply(mat, MARGIN = 3L, FUN = function(x) which(!is.na(x[, 1])))
   if (!is.list(pos)) {
-    pos <- lapply(1:nrow(t(pos)), function(i) t(pos)[i, ])
+    pos <- lapply(1:nrow(t(pos)), FUN = function(i) t(pos)[i, ])
   }
   P0 <- Sis(4, pbin, A0, b0, invSigma0, beta1, covmat0, mat, c(0, 0, 0), function(x, ...) -loglikelihood(x, ...))
   u <- 0
@@ -617,9 +617,9 @@ suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike
     covmat0 <- array(covmat0, c(dim(covmat0), 1))
     mat <- array(mat, c(dim(mat), 1))
   }
-  pos <- apply(mat, 3, function(x) which(!is.na(x[, 1])))
+  pos <- apply(mat, MARGIN = 3L, FUN = function(x) which(!is.na(x[, 1])))
   if (!is.list(pos)) {
-    pos <- lapply(1:nrow(t(pos)), function(i) t(pos)[i, ])
+    pos <- lapply(1:nrow(t(pos)), FUN = function(i) t(pos)[i, ])
   }
   u <- 0
   Po <- P0
@@ -666,7 +666,7 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
     }
     index <- cbind(c(1, seq(m, N - m, by = m)), c(seq(m, N - m, by = m), N))
     index[-1, 1] <- index[-1, 1] + 1
-    lP <- lapply(1:dim(index)[1], function(x) subinitial(pbin[index[x, 1]:index[x, 2]], A0, b0, invSigma0, beta1, covmat0[index[x, 1]:index[x, 2], index[x, 1]:index[x, 2], ], mat[index[x, 1]:index[x, 2], c(1, index[x, 1]:index[x, 2] + 1), ], floglike, fdloglike))
+    lP <- lapply(1:dim(index)[1], FUN = function(x) subinitial(pbin[index[x, 1]:index[x, 2]], A0, b0, invSigma0, beta1, covmat0[index[x, 1]:index[x, 2], index[x, 1]:index[x, 2], ], mat[index[x, 1]:index[x, 2], c(1, index[x, 1]:index[x, 2] + 1), ], floglike, fdloglike))
     P <- matrix(0, N, 3)
     P[index[1, 1]:index[1, 2], ] <- lP[[1]]
     for (i in 2:dim(index)[1])
@@ -774,7 +774,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       if (is.numeric(lscov[[c]])) {
         gldata[[c]] <- temp[upper.tri(temp)]
       } else {
-        gldata[[c]] <- cbind(temp[upper.tri(temp)], sapply(lscov[[c]], function(x) log(x[upper.tri(x)])))
+        gldata[[c]] <- cbind(temp[upper.tri(temp)], sapply(lscov[[c]], FUN = function(x) log(x[upper.tri(x)])))
       }
       gldata[[c]] <- data.frame(gldata[[c]])
       colnames(gldata[[c]]) <- paste("V", 1:dim(gldata[[c]])[2], sep = "")
@@ -821,9 +821,9 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   Loglike0 <- floglike(cbind(pbin, P10), A0, b0, invSigma0, beta1, covmat0, mat)
   cat("LLK0: ", Loglike0, "\n")
   cat("number of nodes:", N, "\n")
-  v <- lapply(1:C, function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
+  v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   if (mk) {
-    mak <- lapply(2:N, function(ii) fmkorder2(pbin[ii] - pbin[ii - 1], A0, b0, solve(invSigma0)))
+    mak <- lapply(2:N, FUN = function(ii) fmkorder2(pbin[ii] - pbin[ii - 1], A0, b0, solve(invSigma0)))
     # lapply(mak,function(x) cat(dim(x),";"))
   } else {
     mak <- NULL
@@ -839,7 +839,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     index2 <- seq(1, N - m2, m2)
     index2 <- c(index2, N)
     Psub <- P01
-    Psub <- do.call(rbind, lapply(1:dim(index)[1], function(x) tranS(suboptimz(pbin[index[x, 1]:index[x, 2]], P01[index[x, 1]:index[x, 2], ], A0, b0, invSigma0, beta1, covmat0[index[x, 1]:index[x, 2], index[x, 1]:index[x, 2], ], mat[index[x, 1]:index[x, 2], c(1, index[x, 1]:index[x, 2] + 1), ], floglike, fdloglike, 0), P01[index[x, 1]:index[x, 2], ])))
+    Psub <- do.call(rbind, lapply(1:dim(index)[1], FUN = function(x) tranS(suboptimz(pbin[index[x, 1]:index[x, 2]], P01[index[x, 1]:index[x, 2], ], A0, b0, invSigma0, beta1, covmat0[index[x, 1]:index[x, 2], index[x, 1]:index[x, 2], ], mat[index[x, 1]:index[x, 2], c(1, index[x, 1]:index[x, 2] + 1), ], floglike, fdloglike, 0), P01[index[x, 1]:index[x, 2], ])))
     Logsub <- floglike(cbind(pbin, Psub), A0, b0, invSigma0, beta1, covmat0, mat)
     cat("LLK after suboptimization: ", Logsub, "\n")
     if (Loglike0 <= Logsub) {
@@ -880,13 +880,13 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     fHMC <- HMC
     fknt <- kinetic
     e_c <- 0.02
-    eps_coarse <- ifelse(min(sapply(lsmap0, function(x) sum(x[, -(1:2)] > 0) / dim(x)[1] / dim(x)[1])) < 0.15, 0.005, e_c)
+    eps_coarse <- ifelse(min(sapply(lsmap0, FUN = function(x) sum(x[, -(1:2)] > 0) / dim(x)[1] / dim(x)[1])) < 0.15, 0.005, e_c)
     num_coarse <- min(50, floor(Maxiter / 4))
   } else {
     fHMC <- HMC1
     fknt <- kinetic_1
     e_c <- 0.01
-    eps_coarse <- ifelse(min(sapply(lsmap0, function(x) sum(x[, -(1:2)] > 0) / dim(x)[1] / dim(x)[1])) < 0.15, 0.005, min(e_c, 10 * epslon))
+    eps_coarse <- ifelse(min(sapply(lsmap0, FUN = function(x) sum(x[, -(1:2)] > 0) / dim(x)[1] / dim(x)[1])) < 0.15, 0.005, min(e_c, 10 * epslon))
     num_coarse <- min(20, floor(Maxiter / 4))
   }
   while (iternum < Maxiter) {
@@ -961,7 +961,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     usLoglike <- floglike(cbind(pbin, P), A, b, invSigma, beta1, covmat0, mat)
     cat("LLK after GLM: ", usLoglike, "\n")
     if (N > 1000 && iternum < (Maxiter - 5)) {
-      Psub <- do.call(rbind, lapply(1:dim(index)[1], function(x) tranS(suboptimz(pbin[index[x, 1]:index[x, 2]], P[index[x, 1]:index[x, 2], ], A0, b0, invSigma0, beta1, covmat0[index[x, 1]:index[x, 2], index[x, 1]:index[x, 2], ], mat[index[x, 1]:index[x, 2], c(1, index[x, 1]:index[x, 2] + 1), ], floglike, fdloglike, 0), P[index[x, 1]:index[x, 2], ])))
+      Psub <- do.call(rbind, lapply(1:dim(index)[1], FUN = function(x) tranS(suboptimz(pbin[index[x, 1]:index[x, 2]], P[index[x, 1]:index[x, 2], ], A0, b0, invSigma0, beta1, covmat0[index[x, 1]:index[x, 2], index[x, 1]:index[x, 2], ], mat[index[x, 1]:index[x, 2], c(1, index[x, 1]:index[x, 2] + 1), ], floglike, fdloglike, 0), P[index[x, 1]:index[x, 2], ])))
       Logsub <- floglike(cbind(pbin, Psub), A0, b0, invSigma0, beta1, covmat0, mat)
       cat("LLK after suboptimization: ", Logsub, "\n")
       if (Logsub >= usLoglike) {
@@ -1002,7 +1002,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       }
     }
     Pf <- avsmth(pbin, P)
-    beta2 <- sapply(Beta, function(x) x[length(x)])
+    beta2 <- sapply(Beta, FUN = function(x) x[length(x)])
     if (N < 1000) {
       tmp_opt <- optim(c(1, beta1), function(x) -floglike(cbind(pbin, x[1] * Pf), A, b, invSigma, x[-1], covmat0, mat, pos, v, mak))
       sLoglike <- -tmp_opt$value
