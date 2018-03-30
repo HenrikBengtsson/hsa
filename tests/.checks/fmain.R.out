@@ -394,7 +394,7 @@ LLK before and after smoothing: 244.2109 232.2521 ( 0.8032123 -1.666825 )
 
 
 Files produced:
-- file 1: 'hap1_full_all_22_100000.txt' (22542 bytes; 0712046220192c8252d013d4c60e4cfb)
+- file 1: 'hap1_full_all_22_100000.txt' (22542 bytes; d8aaeeae5e2858bc6efe4b591a61c70a)
 - file 2: 'hap1_full_all_22_100000beta.txt' (32 bytes; 2d9495538f2020f6be5eea6f4944d766)
 
 
@@ -423,8 +423,8 @@ other attached packages:
 [1] MASS_7.3-49
 
 loaded via a namespace (and not attached):
-[1] compiler_3.4.4 tools_3.4.4   
+[1] compiler_3.4.4          tools_3.4.4             matrixStats_0.53.1-9000
 
 Processing time:
    user  system elapsed 
-285.032   0.268 286.110 
+265.628   0.196 266.355 

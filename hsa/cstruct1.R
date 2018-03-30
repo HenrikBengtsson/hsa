@@ -1,5 +1,9 @@
 # Publications that use results obtained from this software please include a citation of the paper:
 # Zou, C., Zhang, Y., Ouyang, Z. (2016) HSA: integrating multi-track Hi-C data for genome-scale reconstruction of 3D chromatin structure. Submitted.
+
+library(MASS)
+colSds <- matrixStats::colSds
+
 normP <- function(P) {
   P1 <- t(t(P) - colMeans(P))
   P1 <- 5 * P1 / sqrt(max(rowSums(P1^2)))
@@ -41,7 +45,7 @@ finistructure <- function(S0, bin) {
     }
   } else {
     pts <- c(S0[, 1], S0[n, 2])
-    Y <- as.matrix(rbind(S0[, 3:5], rnorm(3, mean = as.numeric(S0[n, 3:5]), as.numeric(apply(S0[-1, 3:5] - S0[-n, 3:5], MARGIN = 2L, FUN = sd)))))
+    Y <- as.matrix(rbind(S0[, 3:5], rnorm(3, mean = as.numeric(S0[n, 3:5]), as.numeric(colSds(S0[-1, 3:5] - S0[-n, 3:5])))))
     S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin[, 1])))
     S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5 / N)), nrow = N, ncol = 3)
   }
@@ -1049,4 +1053,3 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   }
   list(Ao, bo, invSigmao, Po, betao)
 }
-library(MASS)
