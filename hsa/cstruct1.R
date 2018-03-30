@@ -106,7 +106,7 @@ fmirror <- function(v) {
   y
 }
 
-tranS <- function(S1, S2, I_scale=T) {
+tranS <- function(S1, S2, I_scale = TRUE) {
   tmp <- cbind(1, S1)
   beta <- ginv(t(tmp) %*% tmp) %*% (t(tmp) %*% S2)
   # beta=solve(t(tmp)%*%tmp,t(tmp)%*%S2)
@@ -453,7 +453,7 @@ Leapfrog <- function(grad_U, L, epsilon, p0, q0, fM) {
   }
 }
 
-HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans=F) {
+HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE) {
   N <- dim(current_q0)[1]
   m <- dim(current_q0)[2]
   current_q <- current_q0
@@ -506,7 +506,7 @@ HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans=F) {
   }
 }
 
-HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans=F) {
+HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE) {
   N <- dim(current_q0)[1]
   m <- dim(current_q0)[2]
   current_q <- current_q0
@@ -609,7 +609,7 @@ subinitial <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, f
   P
 }
 
-suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdloglike, I_mle=T) {
+suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdloglike, I_mle = TRUE) {
   epslon <- 0.0005
   stp <- 35
   M <- 100
@@ -681,7 +681,7 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
   # return(P)
 }
 
-fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog, epslon, mkfix=0, rho=0, mk, initialS=NULL, coarsefit=T, rmoutlier=F, fitmode=0) {
+fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog, epslon, mkfix=0, rho=0, mk, initialS=NULL, coarsefit = TRUE, rmoutlier = FALSE, fitmode=0) {
   floglike <- loglikelihood0
   fdloglike <- dloglikelihood0
   fcorrect <- rmol
