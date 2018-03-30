@@ -661,7 +661,7 @@ finital<-function(pbin,A0,b0,invSigma0,beta1,covmat0,mat,floglike,fdloglike){
      #return(P)
 }
 
-fmain<-function(lsmap0,lscov0,output,Maxiter,submaxiter,lamda,Leapfrog,epslon,mkfix=0,rho=0,mk,initialS=NULL,coarsefit=T,rmoutlier=F,fitmode=0)
+fmain<-function(lsmap0,lscov0,output,Maxiter,submaxiter,lambda,Leapfrog,epslon,mkfix=0,rho=0,mk,initialS=NULL,coarsefit=T,rmoutlier=F,fitmode=0)
 {   	
 	floglike=loglikelihood0
 	fdloglike=dloglikelihood0
@@ -868,21 +868,21 @@ num_coarse=min(20,floor(Maxiter/4))
     	u=0
    if(iternum<20){
     	submaxiter1=max(submaxiter+50,150)
-    	lamda1=max(submaxiter+50,50)
+    	lambda1=max(submaxiter+50,50)
     }else{
     	if(iternum<0.8*Maxiter){
     	submaxiter1=submaxiter
-    	lamda1=lamda
+    	lambda1=lambda
         }else{
     	submaxiter1=min(submaxiter*1.1,300)
-    	lamda1=min(lamda*1.1,100)
+    	lambda1=min(lambda*1.1,100)
         }
     }
     
     current_epslon=ifelse(iternum<num_coarse && coarsefit,eps_coarse,epslon)
      
 	while(u<submaxiter && (N<1000 || (iternum%%10==1 && iternum>5) ||u<3)){			
-	 P=fHMC(function(x) -floglike(cbind(pbin,x),A0,b0,invSigma0,beta1,covmat0,mat,pos,v,mak),function(y) -fdloglike(cbind(pbin,y),A0,b0,invSigma0,beta1,covmat0,mat,pos,v,mak),current_epslon,Leapfrog,P01,exp(-u/lamda),function(p) fknt(p,N,rho), function(p) momentum(p,N,rho))
+	 P=fHMC(function(x) -floglike(cbind(pbin,x),A0,b0,invSigma0,beta1,covmat0,mat,pos,v,mak),function(y) -fdloglike(cbind(pbin,y),A0,b0,invSigma0,beta1,covmat0,mat,pos,v,mak),current_epslon,Leapfrog,P01,exp(-u/lambda),function(p) fknt(p,N,rho), function(p) momentum(p,N,rho))
 	 P01=P
 	  # plot3d(P01[,1],P01[,2],P01[,3],type="l")
       # points3d(P01[,1],P01[,2],P01[,3],col='red')
