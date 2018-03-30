@@ -661,7 +661,7 @@ finital<-function(pbin,A0,b0,invSigma0,beta1,covmat0,mat,floglike,fdloglike){
      #return(P)
 }
 
-fmain<-function(lsmap0,lscov0,output,Maxiter,submaxiter,lambda,Leapfrog,epslon,mkfix=0,rho=0,mk,initialS=NULL,coarsefit=T,rmoutlier=F,fitmode=0)
+fmain<-function(lsmap0,lscov0,outfile,Maxiter,submaxiter,lambda,Leapfrog,epslon,mkfix=0,rho=0,mk,initialS=NULL,coarsefit=T,rmoutlier=F,fitmode=0)
 {   	
 	floglike=loglikelihood0
 	fdloglike=dloglikelihood0
@@ -849,8 +849,8 @@ Po=P01
 betao=Beta
 iternum=0
 P=P01
-write.table(cbind(bin,normP(Po)),file=paste(output,".txt",sep=""),sep = "\t",eol = "\n", row.names=F,col.names = F)
-write.table(unlist(betao),file=paste(output,"beta.txt",sep=""),sep = "\t",eol = "\n", row.names =F,col.names = F)
+write.table(cbind(bin,normP(Po)),file=paste(outfile,".txt",sep=""),sep = "\t",eol = "\n", row.names=F,col.names = F)
+write.table(unlist(betao),file=paste(outfile,"beta.txt",sep=""),sep = "\t",eol = "\n", row.names =F,col.names = F)
 if(fitmode){
 fHMC=HMC
 fknt=kinetic	
@@ -997,7 +997,7 @@ if(N<1000){
 beta1=pmin(beta1,ifelse(iternum>10,-0.6,-1))
 P01=P
 if(iternum==(num_coarse-1) && coarsefit){P01=matrix(Pf,N,3)}
-write.table(cbind(bin,P),file=paste(output,"temp.txt",sep=""),sep = "\t",eol = "\n", row.names =F,col.names = F)
+write.table(cbind(bin,P),file=paste(outfile,"temp.txt",sep=""),sep = "\t",eol = "\n", row.names =F,col.names = F)
 recodllk[(iternum%%7)+1]=Loglike>Loglike0
 if (Loglike>Loglike0){
 Loglike0=Loglike
@@ -1008,8 +1008,8 @@ Po=P
 if(rmoutlier){Po=fcorrect(pbin,Po)}
 betao=Beta
 cat(bo,Ao,invSigmao,Loglike0,"\n")
-write.table(cbind(bin,Po),file=paste(output,".txt",sep=""),sep = "\t",eol = "\n", row.names =F,col.names = F)
-write.table(unlist(betao),file=paste(output,"beta.txt",sep=""),sep = "\t",eol = "\n", row.names =F,col.names = F)
+write.table(cbind(bin,Po),file=paste(outfile,".txt",sep=""),sep = "\t",eol = "\n", row.names =F,col.names = F)
+write.table(unlist(betao),file=paste(outfile,"beta.txt",sep=""),sep = "\t",eol = "\n", row.names =F,col.names = F)
 }
 #if(iternum>6&& !sum(recodllk)){P01=matrix(Pf,N,3)+matrix(rnorm(3*N,0,sqrt(5/N)),N,3)}
 
