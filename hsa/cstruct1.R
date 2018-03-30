@@ -707,7 +707,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   t <- c(0:(N - 1))
   invSigma0 <- diag(3)
   invS <- diag(3) * sqrt(N)
-  mat <- array(NA, c(N, N + 1, C))
+  mat <- array(NA_real_, c(N, N + 1, C))
   mat0 <- mat
   beta1 <- -rep(1.3, C)
   alpha <- seq(0.5, 1.5, 0.5)
