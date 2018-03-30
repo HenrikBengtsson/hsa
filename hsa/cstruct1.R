@@ -165,7 +165,7 @@ avsmth <- function(bin, P) {
   P0 <- matrix(P0, N, 3)
 }
 
-loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos=NULL, v=NULL, mak=NULL) {
+loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NULL, mak = NULL) {
   L <- 0
   P <- P0[, -1]
   sigma <- solve(invSigma)
@@ -194,7 +194,7 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos=NULL, v=NULL, 
   L
 }
 
-dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v=NULL, mak=NULL) {
+dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak = NULL) {
   P <- as.matrix(P0[, -1])
   sigma <- solve(invSigma)
   N <- dim(P)[1]
@@ -222,7 +222,7 @@ dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v=NULL, mak=
   dL
 }
 
-loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos=NULL, v=NULL, mak=NULL) {
+loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NULL, mak = NULL) {
   L <- 0
   P <- as.matrix(P0[, -1])
   sigma <- solve(invSigma)
@@ -264,7 +264,7 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos=NULL, v=NULL, m
   L
 }
 
-dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v=NULL, mak=NULL) {
+dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak = NULL) {
   P <- P0[, -1]
   sigma <- solve(invSigma)
   # pos=apply(mat,3,function(x) which(!is.na(x[,1])))
@@ -324,7 +324,7 @@ mkcloglikelihood <- function(theta, P0) {
   mean(temp) / 3
 }
 
-dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v=NULL) {
+dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
   P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matrix(theta[x - 1, 1:9], 3, 3)) + theta[x - 1, 10:12]))))
   P <- as.matrix(P)
   # sigma=solve(invSigma)
@@ -394,7 +394,7 @@ dDtotheta <- function(p, b, temp) {
   l
 }
 
-dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v=NULL) {
+dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
   matheta <- lapply(2:dim(index)[1], function(x) rotamat(theta[x - 1, ]))
   P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matheta[[x - 1]][, 1:3]) + theta[x - 1, 4:6]))))
   P <- as.matrix(P)
@@ -681,7 +681,7 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
   # return(P)
 }
 
-fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog, epslon, mkfix=0, rho=0, mk, initialS=NULL, coarsefit = TRUE, rmoutlier = FALSE, fitmode=0) {
+fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog, epslon, mkfix = 0, rho = 0, mk, initialS = NULL, coarsefit = TRUE, rmoutlier = FALSE, fitmode = 0) {
   floglike <- loglikelihood0
   fdloglike <- dloglikelihood0
   fcorrect <- rmol
