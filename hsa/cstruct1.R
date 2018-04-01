@@ -209,7 +209,7 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
   if (is.null(pos)) {
     pos <- apply(mat, MARGIN = 3L, FUN = function(x) which(!is.na(x[, 1])))
     if (!is.list(pos)) {
-      pos <- lapply(1:nrow(t(pos)), FUN = function(i) t(pos)[i, ])
+      pos <- lapply(1:ncol(pos), FUN = function(i) pos[, i])
     }
   }
   if (is.null(v)) {
@@ -266,7 +266,7 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
   if (is.null(pos)) {
     pos <- apply(mat, MARGIN = 3L, FUN = function(x) which(!is.na(x[, 1])))
     if (!is.list(pos)) {
-      pos <- lapply(1:nrow(t(pos)), FUN = function(i) t(pos)[i, ])
+      pos <- lapply(1:ncol(pos), FUN = function(i) pos[, i])
     }
   }
   if (is.null(v)) {
@@ -627,7 +627,7 @@ subinitial <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, f
   }
   pos <- apply(mat, MARGIN = 3L, FUN = function(x) which(!is.na(x[, 1])))
   if (!is.list(pos)) {
-    pos <- lapply(1:nrow(t(pos)), FUN = function(i) t(pos)[i, ])
+    pos <- lapply(1:ncol(pos), FUN = function(i) pos[, i])
   }
   P0 <- Sis(4, pbin, A0, b0, invSigma0, beta1, covmat0, mat, c(0, 0, 0), function(x, ...) -loglikelihood(x, ...))
   u <- 0
@@ -649,7 +649,7 @@ suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike
   }
   pos <- apply(mat, MARGIN = 3L, FUN = function(x) which(!is.na(x[, 1])))
   if (!is.list(pos)) {
-    pos <- lapply(1:nrow(t(pos)), FUN = function(i) t(pos)[i, ])
+    pos <- lapply(1:ncol(pos), FUN = function(i) pos[, i])
   }
   u <- 0
   Po <- P0
