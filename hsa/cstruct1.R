@@ -79,7 +79,7 @@ fmkorder_temp <- function(m, A, b, sigma, S) {
   } else {
     tmp <- Recall(m - 1, A, b, sigma, S)
     mu <- A %*% tmp[, 1] + b
-    temp <- tmp[, -c(1:4)] %*% A
+    temp <- tmp[, -(1:4)] %*% A
     Sigma <- tmp[, 2:4] + (t(temp)) %*% sigma %*% (temp)
     return(as_matrix(cbind(mu, Sigma, temp)))
   }
@@ -337,7 +337,7 @@ mkcloglikelihood <- function(theta, P0) {
   A <- matrix(theta[1:9], nrow = 3, ncol = 3)
   b <- theta[10:12]
   invSigma <- matrix(0, nrow = 3, ncol = 3)
-  invSigma[upper.tri(invSigma, diag = TRUE)] <- theta[-c(1:12)]
+  invSigma[upper.tri(invSigma, diag = TRUE)] <- theta[-(1:12)]
   invSigma <- invSigma + t(invSigma) - diag(diag(invSigma))
   sigma <- solve(invSigma)
   temp <- sapply(2:N, FUN = function(ii) {
@@ -694,7 +694,7 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
     P[index[1, 1]:index[1, 2], ] <- lP[[1]]
     for (i in 2:dim(index)[1])
     {
-      theta <- optim(as.vector(rbind(diag(3), P[index[i - 1, 2], ] - P[index[i, 1], ] + rnorm(3) / 100)), fn = function(x) piece(x, P[1:(index[i - 1, 2]), ], lP[[i]], pbin[1:index[i, 2]], A0, b0, invSigma0, beta1, covmat0[1:index[i, 2], 1:index[i, 2], ], mat[1:index[i, 2], c(1:(index[i, 2] + 1)), ], floglike))
+      theta <- optim(as.vector(rbind(diag(3), P[index[i - 1, 2], ] - P[index[i, 1], ] + rnorm(3) / 100)), fn = function(x) piece(x, P[1:(index[i - 1, 2]), ], lP[[i]], pbin[1:index[i, 2]], A0, b0, invSigma0, beta1, covmat0[1:index[i, 2], 1:index[i, 2], ], mat[1:index[i, 2], 1:(index[i, 2] + 1), ], floglike))
       theta <- matrix(theta$par, nrow = 4, ncol = 3)
       # cat(dim(theta),"\t")
       P[index[i, 1]:index[i, 2], ] <- lP[[i]] %*% theta[-4, ] + rep(1, times = index[i, 2] - index[i, 1] + 1) %*% t(theta[4, ])
@@ -727,7 +727,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   gldata <- vector("list", length = C)
   A0 <- diag(3) #+0*rbind(c(0,-runif(1)/5,0),c(runif(1)/5,0,0),rep(0,3))	
   b0 <- c(0, 0, 0)
-  t <- c(0:(N - 1))
+  t <- 0:(N - 1)
   invSigma0 <- diag(3)
   invS <- diag(3) * sqrt(N)
   mat <- array(NA_real_, dim = c(N, N + 1, C))
@@ -744,7 +744,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       mat[temp, 1, c] <- temp
       pos[[c]] <- temp
       # cat(temp,"\n")
-      temp <- as_matrix(lsmap0[[c]][, -c(1, 2)])
+      temp <- as_matrix(lsmap0[[c]][, -(1:2)])
       if (isSymmetric(temp)) {
         mat[pos[[c]], pos[[c]] + 1, c] <- temp
         gldata[[c]] <- temp[upper.tri(temp)]
@@ -786,7 +786,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       # cat(temp)
       mat[temp, 1, c] <- temp
       pos[[c]] <- temp
-      temp <- as_matrix(lsmap0[[c]][, -c(1, 2)])
+      temp <- as_matrix(lsmap0[[c]][, -(1:2)])
       if (isSymmetric(temp)) {
         mat[pos[[c]], pos[[c]] + 1, c] <- temp
       } else {
@@ -948,7 +948,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       A <- matrix(thetam[1:9], nrow = 3, ncol = 3)
       b <- thetam[10:12]
       invSigma <- matrix(0, nrow = 3, ncol = 3)
-      invSigma[upper.tri(invSigma, diag = TRUE)] <- thetam[-c(1:12)]
+      invSigma[upper.tri(invSigma, diag = TRUE)] <- thetam[-(1:12)]
       invSigma <- invSigma + t(invSigma) - diag(diag(invSigma))
       A0 <- A
       b0 <- b
