@@ -66,8 +66,8 @@ finistructure <- function(S0, bin) {
     pts <- c(S0[, 1], S0[n, 2])
     S0t <- S0[, 3:5]
     Y <- as_matrix(rbind(S0t, rnorm(3, mean = S0t[n, ], colSds(S0t[-1, ] - S0t[-n, ]))))
-    bin_1 <- bin[, 1]
-    S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin_1)))
+    bin_c1 <- bin[, 1]
+    S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin_c1)))
     S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5 / N)), nrow = N, ncol = 3)
   }
   S
@@ -115,13 +115,13 @@ fbead <- function(S1, S2) {
   m <- dim(S1)[1]
   # S=S1*sqrt(sum((S2[1,]-S2[2,])^2)/sum((S1[1,]-S1[m,])^2))
   S <- S1
-  S_1 <- S[1, ]
-  S_m <- S[m, ]
-  S2_1 <- S2[1, ]
-  S2_2 <- S2[2, ]
-  n <- fnormvec(S_m - S_1, S2_2 - S2_1)
-  theta <- fangle(S_m - S_1, S2_2 - S2_1)
-  S <- t(t(S) - S_1)
+  S_r1 <- S[1, ]
+  S_rm <- S[m, ]
+  S2_r1 <- S2[1, ]
+  S2_r2 <- S2[2, ]
+  n <- fnormvec(S_rm - S_r1, S2_r2 - S2_r1)
+  theta <- fangle(S_rm - S_r1, S2_r2 - S2_r1)
+  S <- t(t(S) - S_r1)
   S <- t(apply(S, MARGIN = 1L, FUN = function(x) frotanyvec(x, v = n, theta = theta)))
   S <- t(t(S) - S[1, ] + S1[1, ])
   S
@@ -725,12 +725,14 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   for (i in 1:C) {
     bin <- rbind(bin, lsmap0[[i]][, 1:2])
   }
-  bin <- unique(bin, MARGIN = 1)
-  bin <- bin[order(bin[, 1], decreasing = FALSE), ]
+  bin <- unique(bin, MARGIN = 1L)
+  bin <- bin[order(bin[, 1L], decreasing = FALSE), ]
   N <- dim(bin)[1]
-  mbin <- mean(bin[, 2] - bin[, 1])
-  neigdc <- max(c(1, pmax(floor((bin[-1, 1] - bin[-N, 1]) / mbin), 1)))
-  pbin <- cumsum(c(1, pmax(floor((bin[-1, 1] - bin[-N, 1]) / mbin), 1)))
+  bin_c1 <- bin[, 1]
+  mbin <- mean(bin[, 2] - bin_c1)
+  tmp <- c(1, pmax(floor((bin_c1[-1] - bin_c1[-N]) / mbin), 1))
+  neigdc <-  max(tmp)
+  pbin <- cumsum(tmp)
   gldata <- vector("list", length = C)
   A0 <- diag(3) #+0*rbind(c(0,-runif(1)/5,0),c(runif(1)/5,0,0),rep(0,3))	
   b0 <- c(0, 0, 0)
