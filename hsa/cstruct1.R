@@ -55,7 +55,7 @@ momentum0 <- function(p0) {
 
 finistructure <- function(S0, bin) {
   n <- dim(S0)[1]
-  N <- length(bin[, 1])
+  N <- nrow(bin)
   if (n == N) {
     if (dim(S0)[2] == 3) {
       S <- S0
@@ -64,8 +64,10 @@ finistructure <- function(S0, bin) {
     }
   } else {
     pts <- c(S0[, 1], S0[n, 2])
-    Y <- as_matrix(rbind(S0[, 3:5], rnorm(3, mean = S0[n, 3:5], colSds(S0[-1, 3:5] - S0[-n, 3:5]))))
-    S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin[, 1])))
+    S0t <- S0[, 3:5]
+    Y <- as_matrix(rbind(S0t, rnorm(3, mean = S0t[n, ], colSds(S0t[-1, ] - S0t[-n, ]))))
+    bin_1 <- bin[, 1]
+    S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin_1)))
     S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5 / N)), nrow = N, ncol = 3)
   }
   S
@@ -113,9 +115,13 @@ fbead <- function(S1, S2) {
   m <- dim(S1)[1]
   # S=S1*sqrt(sum((S2[1,]-S2[2,])^2)/sum((S1[1,]-S1[m,])^2))
   S <- S1
-  n <- fnormvec(S[m, ] - S[1, ], S2[2, ] - S2[1, ])
-  theta <- fangle(S[m, ] - S[1, ], S2[2, ] - S2[1, ])
-  S <- t(t(S) - S[1, ])
+  S_1 <- S[1, ]
+  S_m <- S[m, ]
+  S2_1 <- S2[1, ]
+  S2_2 <- S2[2, ]
+  n <- fnormvec(S_m - S_1, S2_2 - S2_1)
+  theta <- fangle(S_m - S_1, S2_2 - S2_1)
+  S <- t(t(S) - S_1)
   S <- t(apply(S, MARGIN = 1L, FUN = function(x) frotanyvec(x, v = n, theta = theta)))
   S <- t(t(S) - S[1, ] + S1[1, ])
   S
@@ -131,7 +137,8 @@ fmirror <- function(v) {
 
 tranS <- function(S1, S2, I_scale = TRUE) {
   tmp <- cbind(1, S1)
-  beta <- ginv(t(tmp) %*% tmp) %*% (t(tmp) %*% S2)
+  tmp_t <- t(tmp)
+  beta <- ginv(tmp_t %*% tmp) %*% (tmp_t %*% S2)
   # beta=solve(t(tmp)%*%tmp,t(tmp)%*%S2)
   s <- svd(beta[-1, ])
   beta[-1, ] <- s$u %*% (diag(sign(s$d))) %*% t(s$v)
@@ -749,8 +756,9 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
         mat[pos[[c]], pos[[c]] + 1, c] <- temp
         gldata[[c]] <- temp[upper.tri(temp)]
       } else {
-        mat[pos[[c]], pos[[c]] + 1, c] <- temp + t(temp)
-        temp <- temp + t(temp)
+        temp_t <- t(temp)
+        mat[pos[[c]], pos[[c]] + 1, c] <- temp + temp_t
+        temp <- temp + temp_t
         gldata[[c]] <- temp[upper.tri(temp)]
       }
       mat0[, , c] <- mat[, , c]
@@ -790,8 +798,9 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       if (isSymmetric(temp)) {
         mat[pos[[c]], pos[[c]] + 1, c] <- temp
       } else {
-        mat[pos[[c]], pos[[c]] + 1, c] <- temp + t(temp)
-        temp <- temp + t(temp)
+        temp_t <- t(temp)
+        mat[pos[[c]], pos[[c]] + 1, c] <- temp + temp_t
+        temp <- temp + temp_t
       }
       mat0[, , c] <- mat[, , c]
       if (is.numeric(lscov[[c]])) {
