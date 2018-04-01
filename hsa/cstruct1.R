@@ -45,7 +45,7 @@ finistructure <- function(S0, bin) {
     }
   } else {
     pts <- c(S0[, 1], S0[n, 2])
-    Y <- as.matrix(rbind(S0[, 3:5], rnorm(3, mean = as.numeric(S0[n, 3:5]), as.numeric(colSds(S0[-1, 3:5] - S0[-n, 3:5])))))
+    Y <- as.matrix(rbind(S0[, 3:5], rnorm(3, mean = S0[n, 3:5], colSds(S0[-1, 3:5] - S0[-n, 3:5]))))
     S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin[, 1])))
     S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5 / N)), nrow = N, ncol = 3)
   }
