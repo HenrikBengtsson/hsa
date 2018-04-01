@@ -4,6 +4,25 @@
 library(MASS)
 colSds <- matrixStats::colSds
 
+## PERFORMANCE: Avoid the overhead from using as.matrix.dist(), e.g.
+## the handling of labels and dimnames are not needed.
+as_matrix.dist <- function (x, ...) {
+  size <- attr(x, "Size")
+  df <- matrix(0, nrow = size, ncol = size)
+  df[row(df) > col(df)] <- x
+  df <- df + t(df)
+  df
+}
+
+## PERFORMANCE: Avoid method dispatch overhead when using as.matrix().
+## Processing time: 265 sec -> 250 sec, i.e. ~5% performance gain.
+as_matrix <- function(x) {
+  if (is.matrix(x)) return(x)
+  if (inherits(x, "dist")) return(as_matrix.dist(x))
+  stop("Not a matrix: ", as.character(substitute(x)))
+}
+
+
 normP <- function(P) {
   P1 <- t(t(P) - colMeans(P))
   P1 <- 5 * P1 / sqrt(max(rowSums(P1^2)))
@@ -45,7 +64,7 @@ finistructure <- function(S0, bin) {
     }
   } else {
     pts <- c(S0[, 1], S0[n, 2])
-    Y <- as.matrix(rbind(S0[, 3:5], rnorm(3, mean = S0[n, 3:5], colSds(S0[-1, 3:5] - S0[-n, 3:5]))))
+    Y <- as_matrix(rbind(S0[, 3:5], rnorm(3, mean = S0[n, 3:5], colSds(S0[-1, 3:5] - S0[-n, 3:5]))))
     S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin[, 1])))
     S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5 / N)), nrow = N, ncol = 3)
   }
@@ -56,13 +75,13 @@ fmkorder_temp <- function(m, A, b, sigma, S) {
   if (m < 2) {
     mu <- A %*% S + b
     Sigma <- sigma
-    return(as.matrix(cbind(mu, Sigma, A)))
+    return(as_matrix(cbind(mu, Sigma, A)))
   } else {
     tmp <- Recall(m - 1, A, b, sigma, S)
     mu <- A %*% tmp[, 1] + b
     temp <- tmp[, -c(1:4)] %*% A
     Sigma <- tmp[, 2:4] + (t(temp)) %*% sigma %*% (temp)
-    return(as.matrix(cbind(mu, Sigma, temp)))
+    return(as_matrix(cbind(mu, Sigma, temp)))
   }
 }
 
@@ -189,7 +208,7 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
   if (is.null(v)) {
     v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
-  distmat <- as.matrix(dist(P))
+  distmat <- as_matrix(dist(P))
   for (i in 1:C) {
     temp <- -cx[pos[[i]], pos[[i]], i] * distmat[pos[[i]], pos[[i]]]^beta[i]
     temp[v[[i]]] <- temp[v[[i]]] + mat[pos[[i]], pos[[i]] + 1, i][v[[i]]] * (beta[i] * log(distmat[pos[[i]], pos[[i]]][v[[i]]]) + log(cx[pos[[i]], pos[[i]], i][v[[i]]]))
@@ -199,7 +218,7 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
 }
 
 dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak = NULL) {
-  P <- as.matrix(P0[, -1])
+  P <- as_matrix(P0[, -1])
   sigma <- solve(invSigma)
   N <- dim(P)[1]
   C <- dim(cx)[3]
@@ -209,7 +228,7 @@ dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, ma
   # pos=apply(mat,3,function(x) which(!is.na(x[,1])))
   # if(!is.list(pos)){pos=lapply(1:nrow(t(pos)),function(i) t(pos)[i,])}
   dL <- matrix(0, nrow = N, ncol = 3)
-  distmat <- as.matrix(dist(P))^2 # apply(P*P,1,sum)%*%t(rep(1,N))+rep(1,N)%*%t(apply(P*P,1,sum))-2*P%*%t(P)
+  distmat <- as_matrix(dist(P))^2 # apply(P*P,1,sum)%*%t(rep(1,N))+rep(1,N)%*%t(apply(P*P,1,sum))-2*P%*%t(P)
   temp <- matrix(0, nrow = N, ncol = N)
   for (i in 1:C) {
     temp[pos[[i]], pos[[i]]] <- temp[pos[[i]], pos[[i]]] - beta[i] * cx[pos[[i]], pos[[i]], i] * (distmat[pos[[i]], pos[[i]]]^(beta[i] / 2 - 1))
@@ -228,7 +247,7 @@ dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, ma
 
 loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NULL, mak = NULL) {
   L <- 0
-  P <- as.matrix(P0[, -1])
+  P <- as_matrix(P0[, -1])
   sigma <- solve(invSigma)
   N <- dim(P)[1]
   C <- dim(cx)[3]
@@ -246,7 +265,7 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
   if (is.null(v)) {
     v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
-  distmat <- as.matrix(dist(P))
+  distmat <- as_matrix(dist(P))
   for (i in 1:C) {
     temp <- -cx[pos[[i]], pos[[i]], i] * distmat[pos[[i]], pos[[i]]]^beta[i]
     temp[v[[i]]] <- temp[v[[i]]] + mat[pos[[i]], pos[[i]] + 1, i][v[[i]]] * (beta[i] * log(distmat[pos[[i]], pos[[i]]][v[[i]]]) + log(cx[pos[[i]], pos[[i]], i][v[[i]]]))
@@ -279,7 +298,7 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
   if (is.null(v)) {
     v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
-  distmat <- as.matrix(dist(P))^2
+  distmat <- as_matrix(dist(P))^2
   # distmat=apply(P*P,1,sum)%*%t(rep(1,N))+rep(1,N)%*%t(apply(P*P,1,sum))-2*P%*%t(P)
   temp <- matrix(0, nrow = N, ncol = N)
   for (i in 1:C) {
@@ -330,7 +349,7 @@ mkcloglikelihood <- function(theta, P0) {
 
 dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
   P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], FUN = function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matrix(theta[x - 1, 1:9], nrow = 3, ncol = 3)) + theta[x - 1, 10:12]))))
-  P <- as.matrix(P)
+  P <- as_matrix(P)
   # sigma=solve(invSigma)
   N <- dim(P)[1]
   C <- dim(cx)[3]
@@ -339,7 +358,7 @@ dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL
   if (is.null(v)) {
     v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
-  distmat <- as.matrix(dist(P))^2
+  distmat <- as_matrix(dist(P))^2
   temp <- matrix(0, nrow = N, ncol = N)
   dD <- array(0, dim = c(N, N, 3))
   for (i in 1:C) {
@@ -401,7 +420,7 @@ dDtotheta <- function(p, b, temp) {
 dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
   matheta <- lapply(2:dim(index)[1], FUN = function(x) rotamat(theta[x - 1, ]))
   P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], FUN = function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matheta[[x - 1]][, 1:3]) + theta[x - 1, 4:6]))))
-  P <- as.matrix(P)
+  P <- as_matrix(P)
   # sigma=solve(invSigma)
   N <- dim(P)[1]
   C <- dim(cx)[3]
@@ -410,7 +429,7 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NUL
   if (is.null(v)) {
     v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   }
-  distmat <- as.matrix(dist(P))^2
+  distmat <- as_matrix(dist(P))^2
   temp <- matrix(0, nrow = N, ncol = N)
   dD <- array(0, dim = c(N, N, 3))
   for (i in 1:C) {
@@ -582,14 +601,14 @@ Sis <- function(d, pbin, A, b, invSigma, beta, cx0, mat0, q0, fL) {
   }
   if (N == d) {
     # cat(c(length(pbin),dim(mat),dim(cx)),"~")
-    return(as.matrix(Qsis(d, pbin, A, b, invSigma, beta, cx, mat, q0, fL)))
+    return(as_matrix(Qsis(d, pbin, A, b, invSigma, beta, cx, mat, q0, fL)))
   } else {
     # cat(c(length(pbin[-N]),dim(mat[-N,-(N+1),])),"\n")
     temp <- Recall(d, pbin[-N], A, b, invSigma, beta, cx[-N, -N, ], mat[-N, -(N + 1), ], q0, fL)
     # cat(dim(temp),"\n")
     addq <- optim(rnorm(3) / 5 + A %*% temp[dim(temp)[1], ] + b, fn = function(x) fL(cbind(pbin[(N - d):N], rbind(temp[(nrow(temp) - d + 1):nrow(temp), ], x)), A, b, invSigma, beta, cx[(N - d):N, (N - d):N, ], mat[(N - d):N, c(1, (N - d + 1):(N + 1)), ]))
     addq <- addq$par
-    return(as.matrix(rbind(temp, t(addq))))
+    return(as_matrix(rbind(temp, t(addq))))
   }
 }
 
@@ -681,7 +700,7 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
       P[index[i, 1]:index[i, 2], ] <- lP[[i]] %*% theta[-4, ] + rep(1, times = index[i, 2] - index[i, 1] + 1) %*% t(theta[4, ])
     }
   }
-  as.matrix(avsmth(pbin, P = P))
+  as_matrix(avsmth(pbin, P = P))
   # return(P)
 }
 
@@ -725,7 +744,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       mat[temp, 1, c] <- temp
       pos[[c]] <- temp
       # cat(temp,"\n")
-      temp <- as.matrix(lsmap0[[c]][, -c(1, 2)])
+      temp <- as_matrix(lsmap0[[c]][, -c(1, 2)])
       if (isSymmetric(temp)) {
         mat[pos[[c]], pos[[c]] + 1, c] <- temp
         gldata[[c]] <- temp[upper.tri(temp)]
@@ -746,7 +765,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     }
     P10 <- normP(P10)
     P01 <- P10
-    dmat <- as.matrix(dist(P10))
+    dmat <- as_matrix(dist(P10))
     for (c in 1:C) {
       dmat1 <- dmat[pos[[c]], pos[[c]]]
       dmat1 <- dmat1[upper.tri(dmat1)]
@@ -767,7 +786,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       # cat(temp)
       mat[temp, 1, c] <- temp
       pos[[c]] <- temp
-      temp <- as.matrix(lsmap0[[c]][, -c(1, 2)])
+      temp <- as_matrix(lsmap0[[c]][, -c(1, 2)])
       if (isSymmetric(temp)) {
         mat[pos[[c]], pos[[c]] + 1, c] <- temp
       } else {
@@ -801,7 +820,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       P10 <- finistructure(initialS, bin = bin)
     }
     P01 <- P10
-    dmat <- as.matrix(dist(P10))
+    dmat <- as_matrix(dist(P10))
     covmat0 <- array(1, dim = c(N, N, C))
     for (c in 1:C) {
       dmat1 <- dmat[pos[[c]], pos[[c]]]
@@ -941,7 +960,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     }
     # cat(loglikelihood(P,A,b,invSigma,beta1,covmat0,mat),"\n")
     covmat0 <- array(1, dim = c(N, N, C))
-    dmat <- as.matrix(dist(P))
+    dmat <- as_matrix(dist(P))
     for (c in 1:C) {
       dmat1 <- dmat[pos[[c]], pos[[c]]]
       dmat1 <- dmat1[upper.tri(dmat1)]
