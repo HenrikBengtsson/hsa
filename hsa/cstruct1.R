@@ -708,13 +708,23 @@ HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
 Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
   # cat(c(length(pbin[1:N]),dim(mat[1:N,1:(N+1),]),dim(cx[1:N,1:N,])),"~")
   if (N == 2) {
-    Padd <- optim(b + rnorm(3, sd = 1 / 5) + q0, fn = function(q) fL(cbind(pbin[1:N], rbind(q0, q)), A, b, invSigma, beta, cx[1:N, 1:N, ], mat[1:N, 1:(N + 1), ]))
+    pbin_t <- pbin[1:2]
+    cx_t <- cx[1:2, 1:2, ]
+    mat_t <- mat[1:2, 1:3, ]
+    Padd <- optim(b + rnorm(3, sd = 1 / 5) + q0, fn = function(q) {
+      fL(cbind(pbin_t, rbind(q0, q)), A, b, invSigma, beta, cx_t, mat_t)
+    })
     # cat(Padd$par,"\n")
     return(rbind(q0, t(Padd$par)))
   } else {
     # cat(pbin,"\n")
     temp <- Recall(N - 1, pbin, A, b, invSigma, beta, cx, mat, q0, fL)
-    Padd <- optim(rnorm(3, sd = 1 / 5) + A %*% temp[dim(temp)[1], ] + b, fn = function(q) fL(cbind(pbin[1:N], rbind(temp, q)), A, b, invSigma, beta, cx[1:N, 1:N, ], mat[1:N, 1:(N + 1), ]))
+    pbin_t <- pbin[1:N]
+    cx_t <- cx[1:N, 1:N, ]
+    mat_t <- mat[1:N, 1:(N + 1), ]
+    Padd <- optim(rnorm(3, sd = 1 / 5) + A %*% temp[dim(temp)[1], ] + b, fn = function(q) {
+      fL(cbind(pbin_t, rbind(temp, q)), A, b, invSigma, beta, cx_t, mat_t)
+    })
     # cat(Padd$par,"\n")
     return(rbind(temp, t(Padd$par)))
   }
@@ -737,9 +747,14 @@ Sis <- function(d, pbin, A, b, invSigma, beta, cx0, mat0, q0, fL) {
     # cat(c(length(pbin[-N]),dim(mat[-N,-(N+1),])),"\n")
     temp <- Recall(d, pbin[-N], A, b, invSigma, beta, cx[-N, -N, ], mat[-N, -(N + 1), ], q0, fL)
     # cat(dim(temp),"\n")
-    addq <- optim(rnorm(3, sd = 1 / 5) + A %*% temp[dim(temp)[1], ] + b, fn = function(x) {
-      idxs <- (N - d):N
-      fL(cbind(pbin[idxs], rbind(temp[(nrow(temp) - d + 1):nrow(temp), ], x)), A, b, invSigma, beta, cx[idxs, idxs, ], mat[idxs, c(1, (N - d + 1):(N + 1)), ])
+    idxs <- (N - d):N
+    pbin_t <- pbin[idxs]
+    nrow <- nrow(temp)
+    temp_t <- temp[(nrow - d + 1):nrow, ]
+    cx_t <- cx[idxs, idxs, ]
+    mat_t <- mat[idxs, c(1, (N - d + 1):(N + 1)), ]
+    addq <- optim(rnorm(3, sd = 1 / 5) + A %*% temp[nrow, ] + b, fn = function(x) {
+      fL(cbind(pbin_t, rbind(temp_t, x)), A, b, invSigma, beta, cx_t, mat_t)
     })
     addq <- addq$par
     return(as_matrix(rbind(temp, t(addq))))
@@ -829,15 +844,21 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
     })
     P <- matrix(0, nrow = N, ncol = 3)
     P[index[1, 1]:index[1, 2], ] <- lP[[1]]
-    for (i in 2:dim(index)[1])
-    {
+    for (i in 2:dim(index)[1]) {
       index_ri_c1 <- index[i, 1]
       index_ri_c2 <- index[i, 2]
       idxs <- 1:index_ri_c2
-      theta <- optim(as.vector(rbind(diag(3), P[index[i - 1, 2], ] - P[index_ri_c1, ] + rnorm(3, sd = 1 / 100))), fn = function(x) piece(x, P[1:(index[i - 1, 2]), ], lP[[i]], pbin[idxs], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, 1:(index_ri_c2 + 1), ], floglike))
+      P_i <- P[1:(index[i - 1, 2]), ]
+      pbin_i <- pbin[idxs]
+      lP_i <- lP[[i]]
+      covmat0_i <- covmat0[idxs, idxs, ]
+      mat_i <- mat[idxs, 1:(index_ri_c2 + 1), ]
+      theta <- optim(as.vector(rbind(diag(3), P[index[i - 1, 2], ] - P[index_ri_c1, ] + rnorm(3, sd = 1 / 100))), fn = function(x) {
+        piece(x, P_i, lP_i, pbin_i, A0, b0, invSigma0, beta1, covmat0_i, mat_i, floglike)
+      })
       theta <- matrix(theta$par, nrow = 4, ncol = 3)
       # cat(dim(theta),"\t")
-      P[index_ri_c1:index_ri_c2, ] <- lP[[i]] %*% theta[-4, ] + rep(1, times = index_ri_c2 - index_ri_c1 + 1) %*% t(theta[4, ])
+      P[index_ri_c1:index_ri_c2, ] <- lP_i %*% theta[-4, ] + rep(1, times = index_ri_c2 - index_ri_c1 + 1) %*% t(theta[4, ])
     }
   }
   as_matrix(avsmth(pbin, P = P))
@@ -993,6 +1014,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   cat("number of nodes:", N, "\n")
   v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   if (mk) {
+    ## HB: sigma <- solve(invSigma0)?!?
     mak <- lapply(2:N, FUN = function(ii) fmkorder2(pbin[ii] - pbin[ii - 1], A = A0, b = b0, sigma = solve(invSigma0)))
     # lapply(mak,function(x) cat(dim(x),";"))
   } else {
@@ -1093,7 +1115,8 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     }
 
     if (mkfix && iternum >= 5) {
-      thetam <- optim(c(as.vector(A0), b0, as.vector(invSigma0[upper.tri(invSigma0, diag = TRUE)])), fn = function(theta) -mkcloglikelihood(theta, P0 = cbind(pbin, P)))
+      P0 <- cbind(pbin, P)
+      thetam <- optim(c(as.vector(A0), b0, as.vector(invSigma0[upper.tri(invSigma0, diag = TRUE)])), fn = function(theta) -mkcloglikelihood(theta, P0 = P0))
       thetam <- thetam$par
       # cat(thetam,"\n")
       A <- matrix(thetam[1:9], nrow = 3, ncol = 3)
