@@ -6,7 +6,8 @@ outprefix <- file.path(outpath, "hap1_full_all_22_100000")
 cat(sprintf("Prefix of output files: %s\n", sQuote(outprefix)))
 
 # Input data
-contacts <- file.path("inst", "exdata", "contact_hap1_full_all_22_100000.txt")
+path <- file.path("inst", "exdata")
+contacts <- file.path(path, "contact_hap1_full_all_22_100000.txt")
 
 ## Parameters
 mak <- 1L
@@ -56,3 +57,12 @@ print(sessionInfo())
 
 cat("\nProcessing time:\n")
 print(dt)
+
+cat("\nValidation:\n")
+data0_1 <- read.table(file.path(path, basename(file1)), header = FALSE)
+data1_1 <- read.table(file1, header = FALSE)
+stopifnot(all.equal(data1_1, data0_1))
+
+data0_2 <- read.table(file.path(path, basename(file2)), header = FALSE)
+data1_2 <- read.table(file2, header = FALSE)
+stopifnot(all.equal(data1_2, data0_2))
