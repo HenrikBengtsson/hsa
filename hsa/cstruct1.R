@@ -108,7 +108,7 @@ fmkorder <- function(m, A, b, sigma, S) {
 
 fmkorder2 <- local({
   zeros_3 <- rep(0, times = 3)
-  function(m, A, b, sigma) fmkorder(m, A, b, sigma, zeros_3)
+  function(m, A, b, sigma) fmkorder(m, A, b, sigma, S = zeros_3)
 })
 
 fnormvec <- function(a, b) {
@@ -118,6 +118,7 @@ fnormvec <- function(a, b) {
 }
 
 fangle <- function(a, b) {
+  ## HB: Call sqrt() only once?!?
   acos(sum(a * b) / sqrt(sum(a^2)) / sqrt(sum(b^2)))
 }
 
@@ -248,8 +249,9 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
     v_i <- v[[i]]
     beta_i <- beta[i]
     distmat_i <- distmat[pos_i, pos_i]
-    temp <- -cx[pos_i, pos_i, i] * distmat_i^beta_i
-    temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx[pos_i, pos_i, i][v_i]))
+    cx_i <- cx[pos_i, pos_i, i]
+    temp <- -cx_i * distmat_i^beta_i
+    temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx_i[v_i]))
     ## sum2(..., idxs)?
     L <- L + sum(temp[upper.tri(temp)]) / N / 3 # +sum(temp[lower.tri(temp))
   }
@@ -314,8 +316,9 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
     v_i <- v[[i]]
     beta_i <- beta[[i]]
     distmat_i <- distmat[pos_i, pos_i]
-    temp <- -cx[pos_i, pos_i, i] * distmat_i^beta_i
-    temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx[pos_i, pos_i, i][v_i]))
+    cx_i <- cx[pos_i, pos_i, i]
+    temp <- -cx_i * distmat_i^beta_i
+    temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx_i[v_i]))
     ## sum2(..., idxs)?
     L <- L + sum(temp[upper.tri(temp)]) / N / 3
     # temp=-cx[pos[[i]],pos[[i]],i]*distmat[pos[[i]],pos[[i]]]^beta[i]/N/3+mat[pos[[i]],pos[[i]]+1,i]*(beta[i]*log(distmat[pos[[i]],pos[[i]]])+log(cx[pos[[i]],pos[[i]],i]))/N/3
