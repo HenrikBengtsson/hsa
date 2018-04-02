@@ -123,7 +123,8 @@ fangle <- function(a, b) {
 
 frotanyvec <- function(x, v, theta) {
   n <- v / sqrt(sum(v^2))
-  cos(theta) * (x - sum(x * n) * n) + sin(theta) * fnormvec(n, x) + sum(x * n) * n
+  t <- sum(x * n) * n
+  cos(theta) * (x - t) + sin(theta) * fnormvec(n, x) + t
 }
 
 fbead <- function(S1, S2) {
@@ -166,6 +167,7 @@ tranS <- local({
       tmp <- tmp$par
       S <- t(t(tmp[1] * S %*% angle2mat(tmp[2:4])) + tmp[5:7])
     } else {
+      ## HB: rowSums((t(t(x)))?
       tmp <- optim(zeros_9, fn = function(x) sum(sqrt(rowSums((t(t(S %*% angle2mat(x[4:6]) %*% fmirror(x[1:3])) + x[7:9]) - S2)^2))))
       tmp <- tmp$par
       S <- t(t(S %*% angle2mat(tmp[4:6]) %*% fmirror(tmp[1:3])) + tmp[7:9])
@@ -193,7 +195,9 @@ rmol <- function(loci, P) {
     outlier <- d1 >= cutoff
     v <- which(outlier)
     for (i in 1:length(v)) {
-      P1[1:v[i], ] <- t(t(P1[1:v[i], ]) + (P[v[i] + 1, ] - P[v[i], ]) * 0.8)
+      v_i <- v[i]
+      idxs <- 1:v[i]
+      P1[idxs, ] <- t(t(P1[idxs, ]) + (P[v_i + 1, ] - P[v_i, ]) * 0.8)
     }
     P1 <- tranS(P1, S2 = P)
   }
@@ -240,8 +244,10 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
   for (i in 1:C) {
     pos_i <- pos[[i]]
     v_i <- v[[i]]
-    temp <- -cx[pos_i, pos_i, i] * distmat[pos_i, pos_i]^beta[i]
-    temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1, i][v_i] * (beta[i] * log(distmat[pos_i, pos_i][v_i]) + log(cx[pos_i, pos_i, i][v_i]))
+    beta_i <- beta[i]
+    distmat_i <- distmat[pos_i, pos_i]
+    temp <- -cx[pos_i, pos_i, i] * distmat_i^beta_i
+    temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx[pos_i, pos_i, i][v_i]))
     ## sum2(..., idxs)?
     L <- L + sum(temp[upper.tri(temp)]) / N / 3 # +sum(temp[lower.tri(temp))
   }
@@ -264,8 +270,10 @@ dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, ma
   for (i in 1:C) {
     pos_i <- pos[[i]]
     v_i <- v[[i]]
-    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta[i] * cx[pos_i, pos_i, i] * (distmat[pos_i, pos_i]^(beta[i] / 2 - 1))
-    temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta[i] * mat[pos_i, pos_i + 1, i][v_i] / distmat[pos_i, pos_i][v_i]
+    beta_i <- beta[[i]]
+    distmat_i <- distmat[pos_i, pos_i]
+    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta_i * cx[pos_i, pos_i, i] * (distmat_i^(beta_i / 2 - 1))
+    temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta_i * mat[pos_i, pos_i + 1, i][v_i] / distmat_i[v_i]
     # temp[pos[[i]],pos[[i]]]=temp[pos[[i]],pos[[i]]]-beta[i]*cx[pos[[i]],pos[[i]],i]*(distmat[pos[[i]],pos[[i]]]^(beta[i]/2-1))+beta[i]*mat[pos[[i]],pos[[i]]+1,i]/distmat[pos[[i]],pos[[i]]]
   }
   diag(temp) <- 0
@@ -302,8 +310,10 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
   for (i in 1:C) {
     pos_i <- pos[[i]]
     v_i <- v[[i]]
-    temp <- -cx[pos_i, pos_i, i] * distmat[pos_i, pos_i]^beta[i]
-    temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1, i][v_i] * (beta[i] * log(distmat[pos_i, pos_i][v_i]) + log(cx[pos_i, pos_i, i][v_i]))
+    beta_i <- beta[[i]]
+    distmat_i <- distmat[pos_i, pos_i]
+    temp <- -cx[pos_i, pos_i, i] * distmat_i^beta_i
+    temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx[pos_i, pos_i, i][v_i]))
     ## sum2(..., idxs)?
     L <- L + sum(temp[upper.tri(temp)]) / N / 3
     # temp=-cx[pos[[i]],pos[[i]],i]*distmat[pos[[i]],pos[[i]]]^beta[i]/N/3+mat[pos[[i]],pos[[i]]+1,i]*(beta[i]*log(distmat[pos[[i]],pos[[i]]])+log(cx[pos[[i]],pos[[i]],i]))/N/3
@@ -341,8 +351,10 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
   for (i in 1:C) {
     pos_i <- pos[[i]]
     v_i <- v[[i]]
-    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta[i] * cx[pos_i, pos_i, i] * (distmat[pos_i, pos_i]^(beta[i] / 2 - 1))
-    temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta[i] * mat[pos_i, pos_i + 1, i][v_i] / distmat[pos_i, pos_i][v_i]
+    beta_i <- beta[i]
+    distmat_i <- distmat[pos_i, pos_i]
+    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta_i * cx[pos_i, pos_i, i] * (distmat_i^(beta_i / 2 - 1))
+    temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta_i * mat[pos_i, pos_i + 1, i][v_i] / distmat_i[v_i]
     # temp[pos[[i]],pos[[i]]]=temp[pos[[i]],pos[[i]]]-beta[i]*cx[pos[[i]],pos[[i]],i]*(distmat[pos[[i]],pos[[i]]]^(beta[i]/2-1))+beta[i]*mat[pos[[i]],pos[[i]]+1,i]/distmat[pos[[i]],pos[[i]]]
   }
   diag(temp) <- 0
@@ -416,8 +428,10 @@ dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL
   for (i in 1:C) {
     pos_i <- pos[[i]]
     v_i <- v[[i]]
-    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta[i] * cx[pos_i, pos_i, i] * (distmat[pos_i, pos_i]^(beta[i] / 2 - 1))
-    temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta[i] * mat[pos_i, pos_i + 1, i][v_i] / distmat[pos_i, pos_i][v_i]
+    beta_i <- beta[i]
+    distmat_i <- distmat[pos_i, pos_i]
+    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta_i * cx[pos_i, pos_i, i] * (distmat_i^(beta_i / 2 - 1))
+    temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta_i * mat[pos_i, pos_i + 1, i][v_i] / distmat_i[v_i]
     # temp[pos[[i]],pos[[i]]]=temp[pos[[i]],pos[[i]]]-beta[i]*cx[pos[[i]],pos[[i]],i]*(distmat[pos[[i]],pos[[i]]]^(beta[i]/2-1))+beta[i]*mat[pos[[i]],pos[[i]]+1,i]/distmat[pos[[i]],pos[[i]]]
   }
 
@@ -485,11 +499,29 @@ rotamat <- function(theta) {
 
 dDtotheta <- function(p, b, temp) {
   l <- matrix(0, nrow = dim(b)[1], ncol = 3)
-  l[, 1] <- -2 * (p[2] * (-temp[2, 2]) - p[1] * temp[1, 2] - temp[3, 2] * p[3]) * (b[, 1] - p[1] * temp[1, 1] + p[2] * (-temp[2, 1]) - temp[3, 1] * p[3]) - 2 * (p[1] * temp[1, 1] - p[2] * (-temp[2, 1]) + temp[3, 1] * p[3]) * (b[, 2] - p[1] * temp[1, 2] + p[2] * (-temp[2, 2]) - temp[3, 2] * p[3])
 
-  l[, 2] <- 2 * (temp[1, 5] * temp[3, 3] * p[3] + temp[1, 5] * temp[2, 3] * p[2] + temp[1, 5] * temp[1, 3] * p[1]) * (b[, 2] - p[1] * temp[1, 2] + p[2] * (-temp[2, 2]) - temp[3, 2] * p[3]) - 2 * (temp[3, 3] * temp[1, 4] * p[3] + temp[3, 5] * temp[3, 1] * p[2] + temp[1, 4] * temp[1, 3] * p[1]) * (b[, 1] - p[1] * temp[1, 1] + p[2] * (-temp[2, 1]) - temp[3, 1] * p[3]) + 2 * (temp[3, 3] * temp[3, 5] * p[2] - temp[2, 4] * p[3] + temp[3, 3] * temp[3, 4] * p[1]) * (temp[3, 3] * p[3] - b[, 3] + temp[2, 3] * p[2] + temp[1, 3] * p[1])
+  temp_11 <- temp[1, 1]
+  temp_12 <- temp[1, 2]
+  temp_13 <- temp[1, 3]
+  temp_14 <- temp[1, 4]
+  temp_15 <- temp[1, 5]
+  temp_21 <- temp[2, 1]
+  temp_22 <- temp[2, 2]
+  temp_23 <- temp[2, 3]
+  temp_31 <- temp[3, 1]
+  temp_32 <- temp[3, 2]
+  temp_33 <- temp[3, 3]
+  temp_35 <- temp[3, 5]
 
-  l[, 3] <- 2 * (temp[2, 3] * p[1] - temp[1, 3] * p[2]) * (temp[3, 3] * p[3] - b[, 3] + temp[2, 3] * p[2] + temp[1, 3] * p[1]) + 2 * (p[1] * (-temp[2, 2]) + p[2] * temp[1, 2]) * (b[, 2] - p[1] * temp[1, 2] + p[2] * (-temp[2, 2]) - temp[3, 2] * p[3]) + 2 * (p[1] * (-temp[2, 1]) + p[2] * temp[1, 1]) * (b[, 1] - p[1] * temp[1, 1] + p[2] * (-temp[2, 1]) - temp[3, 1] * p[3])
+  b_c1 <- b[, 1]
+  b_c2 <- b[, 2]
+  b_c3 <- b[, 3]
+  
+  l[, 1] <- -2 * (p[2] * -temp_22 - p[1] * temp_12 - temp_32 * p[3]) * (b_c1 - p[1] * temp_11 + p[2] * -temp_21 - temp_31 * p[3]) - 2 * (p[1] * temp_11 - p[2] * -temp_21 + temp_31 * p[3]) * (b_c2 - p[1] * temp_12 + p[2] * -temp_22 - temp_32 * p[3])
+
+  l[, 2] <- 2 * (temp_15 * temp_33 * p[3] + temp_15 * temp_23 * p[2] + temp_15 * temp_13 * p[1]) * (b_c2 - p[1] * temp_12 + p[2] * -temp_22 - temp_32 * p[3]) - 2 * (temp_33 * temp_14 * p[3] + temp_35 * temp_31 * p[2] + temp_14 * temp_13 * p[1]) * (b_c1 - p[1] * temp_11 + p[2] * -temp_21 - temp_31 * p[3]) + 2 * (temp_33 * temp_35 * p[2] - temp[2, 4] * p[3] + temp_33 * temp[3, 4] * p[1]) * (temp_33 * p[3] - b_c3 + temp_23 * p[2] + temp_13 * p[1])
+
+  l[, 3] <- 2 * (temp_23 * p[1] - temp_13 * p[2]) * (temp_33 * p[3] - b_c3 + temp_23 * p[2] + temp_13 * p[1]) + 2 * (p[1] * -temp_22 + p[2] * temp_12) * (b_c2 - p[1] * temp_12 + p[2] * -temp_22 - temp_32 * p[3]) + 2 * (p[1] * -temp_21 + p[2] * temp_11) * (b_c1 - p[1] * temp_11 + p[2] * -temp_21 - temp_31 * p[3])
 
   # l[1]=- 2*(p[2]*(sin(theta[1])*sin(theta[3]) - cos(theta[1])*cos(theta[2])*cos(theta[3])) - p[1]*(cos(theta[3])*sin(theta[1]) + cos(theta[1])*cos(theta[2])*sin(theta[3])) + cos(theta[1])*sin(theta[2])*p[3])*(b[1] - p[1]*(cos(theta[1])*cos(theta[3]) - cos(theta[2])*sin(theta[1])*sin(theta[3])) + p[2]*(cos(theta[1])*sin(theta[3]) + cos(theta[2])*cos(theta[3])*sin(theta[1])) - sin(theta[1])*sin(theta[2])*p[3]) - 2*(p[1]*(cos(theta[1])*cos(theta[3]) - cos(theta[2])*sin(theta[1])*sin(theta[3])) - p[2]*(cos(theta[1])*sin(theta[3]) + cos(theta[2])*cos(theta[3])*sin(theta[1])) + sin(theta[1])*sin(theta[2])*p[3])*(b[2] - p[1]*(cos(theta[3])*sin(theta[1]) + cos(theta[1])*cos(theta[2])*sin(theta[3])) + p[2]*(sin(theta[1])*sin(theta[3]) - cos(theta[1])*cos(theta[2])*cos(theta[3])) + cos(theta[1])*sin(theta[2])*p[3])
 
@@ -519,8 +551,10 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NUL
   for (i in 1:C) {
     pos_i <- pos[[i]]
     v_i <- v[[i]]
-    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta[i] * cx[pos_i, pos_i, i] * (distmat[pos_i, pos_i]^(beta[i] / 2 - 1))
-    temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta[i] * mat[pos_i, pos_i + 1, i][v_i] / distmat[pos_i, pos_i][v_i]
+    beta_i <- beta[i]
+    distmat_i <- distmat[pos_i, pos_i]
+    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta_i * cx[pos_i, pos_i, i] * (distmat_i^(beta_i / 2 - 1))
+    temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta_i * mat[pos_i, pos_i + 1, i][v_i] / distmat_i[v_i]
     # temp[pos[[i]],pos[[i]]]=temp[pos[[i]],pos[[i]]]-beta[i]*cx[pos[[i]],pos[[i]],i]*(distmat[pos[[i]],pos[[i]]]^(beta[i]/2-1))+beta[i]*mat[pos[[i]],pos[[i]]+1,i]/distmat[pos[[i]],pos[[i]]]
   }
   diag(temp) <- 0
@@ -564,15 +598,13 @@ Leapfrog <- function(grad_U, L, epsilon, p0, q0, fM) {
     # q = (q0 + epsilon * p0)
     q <- (q0 + epsilon * (fM(p0)))
     p <- p0 - epsilon * grad_U(q) / 2
-
-    return(list(p, q))
   } else {
     temp <- Recall(grad_U, L - 1, epsilon, p0, q0, fM)
     # q=temp[[2]]+epsilon*(temp[[1]])
     q <- (temp[[2]] + epsilon * (fM(temp[[1]])))
     p <- temp[[1]] - epsilon * grad_U(temp[[2]]) / 2
-    return(list(p, q))
   }
+  list(p, q)
 }
 
 HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE) {
