@@ -22,6 +22,16 @@ as_matrix <- function(x) {
   stop("Not a matrix: ", as.character(substitute(x)))
 }
 
+## PERFORMANCE: Avoid overhead from setting dimnames in cbind() and rbind()
+cbind <- local({
+  base_cbind <- base::cbind
+  function(...) base_cbind(..., deparse.level = 0L)
+})
+
+rbind <- local({
+  base_rbind <- base::rbind
+  function(...) base_rbind(..., deparse.level = 0L)
+})
 
 normP <- function(P) {
   P1 <- t(t(P) - colMeans(P))
@@ -42,12 +52,15 @@ kinetic <- function(p0, N, rho) {
 }
 
 kinetic_1 <- function(p0, N, rho) {
-  (sum(p0^2) - sum(p0[-1, ] * p0[-N, ]) * rho * 2)
+  sum(p0^2) - sum(p0[-1, ] * p0[-N, ]) * rho * 2
 }
 
-momentum <- function(p0, N, rho) {
-  p0 - rbind(p0[-1, ] * rho, rep(0, times = 3)) - rbind(rep(0, times = 3), p0[-N, ] * rho)
-}
+momentum <- local({
+  zeros_3 <- rep(0, times = 3)
+  function(p0, N, rho) {
+    p0 - rbind(p0[-1, ] * rho, zeros_3) - rbind(zeros_3, p0[-N, ] * rho)
+  }
+})
 
 momentum0 <- function(p0) {
   p0
@@ -93,9 +106,10 @@ fmkorder <- function(m, A, b, sigma, S) {
   temp
 }
 
-fmkorder2 <- function(m, A, b, sigma) {
-  fmkorder(m, A, b, sigma, rep(0, times = 3))
-}
+fmkorder2 <- local({
+  zeros_3 <- rep(0, times = 3)
+  function(m, A, b, sigma) fmkorder(m, A, b, sigma, zeros_3)
+})
 
 fnormvec <- function(a, b) {
   n <- c(a[2] * b[3] - a[3] * b[2], a[3] * b[1] - a[1] * b[3], a[1] * b[2] - a[2] * b[1])
@@ -135,26 +149,29 @@ fmirror <- function(v) {
   y
 }
 
-tranS <- function(S1, S2, I_scale = TRUE) {
-  tmp <- cbind(1, S1)
-  tmp_t <- t(tmp)
-  beta <- ginv(tmp_t %*% tmp) %*% (tmp_t %*% S2)
-  # beta=solve(t(tmp)%*%tmp,t(tmp)%*%S2)
-  s <- svd(beta[-1, ])
-  beta[-1, ] <- s$u %*% (diag(sign(s$d))) %*% t(s$v)
-  S <- tmp %*% beta
-  if (I_scale) {
-    beta[-1, ] <- mean(abs(s$d)) * s$u %*% (diag(sign(s$d))) %*% t(s$v)
-    tmp <- optim(c(1, 0, 0, 0, 0, 0, 0), fn = function(x) sum(sqrt(rowSums((t(t(x[1] * S %*% angle2mat(x[2:4])) + x[5:7]) - S2)^2))))
-    tmp <- tmp$par
-    S <- t(t(tmp[1] * S %*% angle2mat(tmp[2:4])) + tmp[5:7])
-  } else {
-    tmp <- optim(rep(0, times = 9), fn = function(x) sum(sqrt(rowSums((t(t(S %*% angle2mat(x[4:6]) %*% fmirror(x[1:3])) + x[7:9]) - S2)^2))))
-    tmp <- tmp$par
-    S <- t(t(S %*% angle2mat(tmp[4:6]) %*% fmirror(tmp[1:3])) + tmp[7:9])
+tranS <- local({
+  zeros_9 <- rep(0, times = 9)
+  function(S1, S2, I_scale = TRUE) {
+    tmp <- cbind(1, S1)
+    tmp_t <- t(tmp)
+    beta <- ginv(tmp_t %*% tmp) %*% (tmp_t %*% S2)
+    # beta=solve(t(tmp)%*%tmp,t(tmp)%*%S2)
+    s <- svd(beta[-1, ])
+    beta[-1, ] <- s$u %*% (diag(sign(s$d))) %*% t(s$v)
+    S <- tmp %*% beta
+    if (I_scale) {
+      beta[-1, ] <- mean(abs(s$d)) * s$u %*% (diag(sign(s$d))) %*% t(s$v)
+      tmp <- optim(c(1, 0, 0, 0, 0, 0, 0), fn = function(x) sum(sqrt(rowSums((t(t(x[1] * S %*% angle2mat(x[2:4])) + x[5:7]) - S2)^2))))
+      tmp <- tmp$par
+      S <- t(t(tmp[1] * S %*% angle2mat(tmp[2:4])) + tmp[5:7])
+    } else {
+      tmp <- optim(zeros_9, fn = function(x) sum(sqrt(rowSums((t(t(S %*% angle2mat(x[4:6]) %*% fmirror(x[1:3])) + x[7:9]) - S2)^2))))
+      tmp <- tmp$par
+      S <- t(t(S %*% angle2mat(tmp[4:6]) %*% fmirror(tmp[1:3])) + tmp[7:9])
+    }
+    S
   }
-  S
-}
+})
 
 rmol <- function(loci, P) {
   n <- dim(P)[1]
@@ -186,14 +203,17 @@ rmol <- function(loci, P) {
   P1
 }
 
-avsmth <- function(bin, P) {
-  N <- length(bin)
-  # dP=sqrt(rowSums((P[-1,]-P[-N,])^2))
-  P0 <- filter(P, rep(1, times = 3) / 3, sides = 2)
-  P0[1, ] <- (P[1, ] + P[2, ]) / 2
-  P0[N, ] <- (P[N, ] + P[N - 1, ]) / 2
-  P0 <- matrix(P0, nrow = N, ncol = 3)
-}
+avsmth <- local({
+  thirds_3 <- rep(1 / 3, times = 3)
+  function(bin, P) {
+    N <- length(bin)
+    # dP=sqrt(rowSums((P[-1,]-P[-N,])^2))
+    P0 <- filter(P, thirds_3, sides = 2)
+    P0[1, ] <- (P[1, ] + P[2, ]) / 2
+    P0[N, ] <- (P[N, ] + P[N - 1, ]) / 2
+    P0 <- matrix(P0, nrow = N, ncol = 3)
+  }
+})
 
 loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NULL, mak = NULL) {
   L <- 0
@@ -221,6 +241,7 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
     v_i <- v[[i]]
     temp <- -cx[pos_i, pos_i, i] * distmat[pos_i, pos_i]^beta[i]
     temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1, i][v_i] * (beta[i] * log(distmat[pos_i, pos_i][v_i]) + log(cx[pos_i, pos_i, i][v_i]))
+    ## sum2(..., idxs)?
     L <- L + sum(temp[upper.tri(temp)]) / N / 3 # +sum(temp[lower.tri(temp))
   }
   L
@@ -282,6 +303,7 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
     v_i <- v[[i]]
     temp <- -cx[pos_i, pos_i, i] * distmat[pos_i, pos_i]^beta[i]
     temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1, i][v_i] * (beta[i] * log(distmat[pos_i, pos_i][v_i]) + log(cx[pos_i, pos_i, i][v_i]))
+    ## sum2(..., idxs)?
     L <- L + sum(temp[upper.tri(temp)]) / N / 3
     # temp=-cx[pos[[i]],pos[[i]],i]*distmat[pos[[i]],pos[[i]]]^beta[i]/N/3+mat[pos[[i]],pos[[i]]+1,i]*(beta[i]*log(distmat[pos[[i]],pos[[i]]])+log(cx[pos[[i]],pos[[i]],i]))/N/3
     # L=L+sum(temp[upper.tri(temp)])# +sum(temp[lower.tri(temp))
@@ -765,7 +787,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   invS <- diag(3) * sqrt(N)
   mat <- array(NA_real_, dim = c(N, N + 1, C))
   mat0 <- mat
-  beta1 <- -rep(1.3, times = C)
+  beta1 <- rep(-1.3, times = C)
   alpha <- seq(from = 0.5, to = 1.5, by = 0.5)
   covmat0 <- array(1, dim = c(N, N, C))
   Beta <- vector("list", length = C)
