@@ -118,8 +118,7 @@ fnormvec <- function(a, b) {
 }
 
 fangle <- function(a, b) {
-  ## HB: Call sqrt() only once?!?
-  acos(sum(a * b) / sqrt(sum(a^2)) / sqrt(sum(b^2)))
+  acos(sum(a * b) / sqrt(sum(a^2) * sum(b^2)))
 }
 
 frotanyvec <- function(x, v, theta) {
