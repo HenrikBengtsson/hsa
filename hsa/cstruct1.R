@@ -78,7 +78,7 @@ finistructure <- function(S0, bin) {
   } else {
     pts <- c(S0[, 1], S0[n, 2])
     S0_c35 <- S0[, 3:5]
-    Y <- as_matrix(rbind(S0_c35, rnorm(3, mean = S0_c35[n, ], colSds(S0_c35[-1, ] - S0_c35[-n, ]))))
+    Y <- as_matrix(rbind(S0_c35, rnorm(3, mean = S0_c35[n, ], sd = colSds(S0_c35[-1, ] - S0_c35[-n, ]))))
     bin_c1 <- bin[, 1]
     S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin_c1)))
     S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5 / N)), nrow = N, ncol = 3)
@@ -617,7 +617,7 @@ HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE) 
     # q=tranS(q,current_q)
   }
   # p = array(0,dim(q))
-  p <- array(rnorm(N * m, mean = 0) / sqrt(N), dim = dim(q)) # independent standard normal variates
+  p <- array(rnorm(N * m, mean = 0, sd = 1 / sqrt(N)), dim = dim(q)) # independent standard normal variates
   current_p <- p
   # Make a half step for momentum at the beginning
   p <- p - epsilon * grad_U(q) / 2
@@ -666,7 +666,7 @@ HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
   current_q <- current_q0
   q <- current_q
   # p = array(0,dim(q))
-  p <- array(rnorm(N * m, mean = 0) / sqrt(N), dim = dim(q)) # independent standard normal variates
+  p <- array(rnorm(N * m, mean = 0, sd = 1 / sqrt(N)), dim = dim(q)) # independent standard normal variates
   current_p <- p
   # Make a half step for momentum at the beginning
   p <- p - epsilon * grad_U(q) / 2
@@ -708,13 +708,13 @@ HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
 Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
   # cat(c(length(pbin[1:N]),dim(mat[1:N,1:(N+1),]),dim(cx[1:N,1:N,])),"~")
   if (N == 2) {
-    Padd <- optim(b + rnorm(3) / 5 + q0, fn = function(q) fL(cbind(pbin[1:N], rbind(q0, q)), A, b, invSigma, beta, cx[1:N, 1:N, ], mat[1:N, 1:(N + 1), ]))
+    Padd <- optim(b + rnorm(3, sd = 1 / 5) + q0, fn = function(q) fL(cbind(pbin[1:N], rbind(q0, q)), A, b, invSigma, beta, cx[1:N, 1:N, ], mat[1:N, 1:(N + 1), ]))
     # cat(Padd$par,"\n")
     return(rbind(q0, t(Padd$par)))
   } else {
     # cat(pbin,"\n")
     temp <- Recall(N - 1, pbin, A, b, invSigma, beta, cx, mat, q0, fL)
-    Padd <- optim(rnorm(3) / 5 + A %*% temp[dim(temp)[1], ] + b, fn = function(q) fL(cbind(pbin[1:N], rbind(temp, q)), A, b, invSigma, beta, cx[1:N, 1:N, ], mat[1:N, 1:(N + 1), ]))
+    Padd <- optim(rnorm(3, sd = 1 / 5) + A %*% temp[dim(temp)[1], ] + b, fn = function(q) fL(cbind(pbin[1:N], rbind(temp, q)), A, b, invSigma, beta, cx[1:N, 1:N, ], mat[1:N, 1:(N + 1), ]))
     # cat(Padd$par,"\n")
     return(rbind(temp, t(Padd$par)))
   }
@@ -737,7 +737,7 @@ Sis <- function(d, pbin, A, b, invSigma, beta, cx0, mat0, q0, fL) {
     # cat(c(length(pbin[-N]),dim(mat[-N,-(N+1),])),"\n")
     temp <- Recall(d, pbin[-N], A, b, invSigma, beta, cx[-N, -N, ], mat[-N, -(N + 1), ], q0, fL)
     # cat(dim(temp),"\n")
-    addq <- optim(rnorm(3) / 5 + A %*% temp[dim(temp)[1], ] + b, fn = function(x) {
+    addq <- optim(rnorm(3, sd = 1 / 5) + A %*% temp[dim(temp)[1], ] + b, fn = function(x) {
       idxs <- (N - d):N
       fL(cbind(pbin[idxs], rbind(temp[(nrow(temp) - d + 1):nrow(temp), ], x)), A, b, invSigma, beta, cx[idxs, idxs, ], mat[idxs, c(1, (N - d + 1):(N + 1)), ])
     })
@@ -834,7 +834,7 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
       index_ri_c1 <- index[i, 1]
       index_ri_c2 <- index[i, 2]
       idxs <- 1:index_ri_c2
-      theta <- optim(as.vector(rbind(diag(3), P[index[i - 1, 2], ] - P[index_ri_c1, ] + rnorm(3) / 100)), fn = function(x) piece(x, P[1:(index[i - 1, 2]), ], lP[[i]], pbin[idxs], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, 1:(index_ri_c2 + 1), ], floglike))
+      theta <- optim(as.vector(rbind(diag(3), P[index[i - 1, 2], ] - P[index_ri_c1, ] + rnorm(3, sd = 1 / 100))), fn = function(x) piece(x, P[1:(index[i - 1, 2]), ], lP[[i]], pbin[idxs], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, 1:(index_ri_c2 + 1), ], floglike))
       theta <- matrix(theta$par, nrow = 4, ncol = 3)
       # cat(dim(theta),"\t")
       P[index_ri_c1:index_ri_c2, ] <- lP[[i]] %*% theta[-4, ] + rep(1, times = index_ri_c2 - index_ri_c1 + 1) %*% t(theta[4, ])
