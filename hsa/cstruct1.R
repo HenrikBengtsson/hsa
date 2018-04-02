@@ -77,8 +77,8 @@ finistructure <- function(S0, bin) {
     }
   } else {
     pts <- c(S0[, 1], S0[n, 2])
-    S0t <- S0[, 3:5]
-    Y <- as_matrix(rbind(S0t, rnorm(3, mean = S0t[n, ], colSds(S0t[-1, ] - S0t[-n, ]))))
+    S0_c35 <- S0[, 3:5]
+    Y <- as_matrix(rbind(S0_c35, rnorm(3, mean = S0_c35[n, ], colSds(S0_c35[-1, ] - S0_c35[-n, ]))))
     bin_c1 <- bin[, 1]
     S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin_c1)))
     S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5 / N)), nrow = N, ncol = 3)
@@ -112,8 +112,9 @@ fmkorder2 <- local({
 })
 
 fnormvec <- function(a, b) {
-  n <- c(a[2] * b[3] - a[3] * b[2], a[3] * b[1] - a[1] * b[3], a[1] * b[2] - a[2] * b[1])
-  n
+  c(a[2] * b[3] - a[3] * b[2],
+    a[3] * b[1] - a[1] * b[3],
+    a[1] * b[2] - a[2] * b[1])
 }
 
 fangle <- function(a, b) {
@@ -397,7 +398,9 @@ mkcloglikelihood <- function(theta, P0) {
 }
 
 dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
-  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], FUN = function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matrix(theta[x - 1, 1:9], nrow = 3, ncol = 3)) + theta[x - 1, 10:12]))))
+  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, args = sapply(2:dim(index)[1], FUN = function(x) {
+    t(t(P0[index[x, 1]:index[x, 2], -1] %*% matrix(theta[x - 1, 1:9], nrow = 3, ncol = 3)) + theta[x - 1, 10:12])
+  })))
   P <- as_matrix(P)
   # sigma=solve(invSigma)
   N <- dim(P)[1]
@@ -425,13 +428,41 @@ dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL
   dD[, , 2] <- t(tmp) - tmp
   tmp <- temp * P[, 3]
   dD[, , 3] <- t(tmp) - tmp
-  tmp <- t(apply(index[-1, ], MARGIN = 1L, FUN = function(x) c(colSums(dD[-(x[1]:x[2]), x[1]:x[2], 1] %*% P0[x[1]:x[2], -1]), colSums(dD[-(x[1]:x[2]), x[1]:x[2], 2] %*% P0[x[1]:x[2], -1]), colSums(dD[-(x[1]:x[2]), x[1]:x[2], 3] %*% P0[x[1]:x[2], -1])))) / N / 3
+  index_rn1 <- index[-1, ]
+  tmp <- t(apply(index_rn1, MARGIN = 1L, FUN = function(x) {
+    idxs <- x[1]:x[2]    
+    P0t <- P0[idxs, -1]
+    c(colSums(dD[-idxs, idxs, 1] %*% P0t),
+      colSums(dD[-idxs, idxs, 2] %*% P0t),
+      colSums(dD[-idxs, idxs, 3] %*% P0t))
+  })) / N / 3
   dL[, 1:9] <- tmp # t(apply(index[-1,],1,function(x) c(colSums(dD[-(x[1]:x[2]),x[1]:x[2],1]%*%P0[x[1]:x[2],-1]),colSums(dD[-(x[1]:x[2]),x[1]:x[2],2]%*%P0[x[1]:x[2],-1]),colSums(dD[-(x[1]:x[2]),x[1]:x[2],3]%*%P0[x[1]:x[2],-1]))))/N/3
-  dL[, 1:9] <- dL[, 1:9] + t(apply(index[-1, ], MARGIN = 1L, FUN = function(x) c(sapply(2:4, FUN = function(k) c(sum(upper.tri(t(dD[x[1]:x[2], x[1]:x[2], 1] * P0[x[1]:x[2], k])) - upper.tri(dD[x[1]:x[2], x[1]:x[2], 1] * P0[x[1]:x[2], k])), sum(upper.tri(t(dD[x[1]:x[2], x[1]:x[2], 2] * P0[x[1]:x[2], k])) - upper.tri(dD[x[1]:x[2], x[1]:x[2], 2] * P0[x[1]:x[2], k])), sum(upper.tri(t(dD[x[1]:x[2], x[1]:x[2], 3] * P0[x[1]:x[2], k])) - upper.tri(dD[x[1]:x[2], x[1]:x[2], 3] * P0[x[1]:x[2], k]))))))) / N / 3
 
-  dL[, 10] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 1])) / N / 3
-  dL[, 11] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 2])) / N / 3
-  dL[, 12] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 3])) / N / 3
+  dL[, 1:9] <- dL[, 1:9] + t(apply(index_rn1, MARGIN = 1L, FUN = function(x) {
+    idxs <- x[1]:x[2]
+    sapply(2:4, FUN = function(k) {
+      P0t <- P0[idxs, k]
+      T_1 <- dD[idxs, idxs, 1] * P0t
+      T_2 <- dD[idxs, idxs, 2] * P0t
+      T_3 <- dD[idxs, idxs, 3] * P0t
+      c(sum(upper.tri(t(T_1)) - upper.tri(T_1)),
+        sum(upper.tri(t(T_2)) - upper.tri(T_2)),
+        sum(upper.tri(t(T_3)) - upper.tri(T_3)))
+    })
+  })) / N / 3
+  
+  dL[, 10] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {
+    idxs <- x[1]:x[2]
+    sum(dD[-idxs, idxs, 1])
+  }) / N / 3
+  dL[, 11] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {
+    idxs <- x[1]:x[2]
+    sum(dD[-idxs, idxs, 2])
+  }) / N / 3
+  dL[, 12] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {
+    idxs <- x[1]:x[2]
+    sum(dD[-idxs, idxs, 3])
+  }) / N / 3
   dL
 }
 
@@ -470,7 +501,9 @@ dDtotheta <- function(p, b, temp) {
 
 dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
   matheta <- lapply(2:dim(index)[1], FUN = function(x) rotamat(theta[x - 1, ]))
-  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, sapply(2:dim(index)[1], FUN = function(x) t(t(P0[index[x, 1]:index[x, 2], -1] %*% matheta[[x - 1]][, 1:3]) + theta[x - 1, 4:6]))))
+  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, args = sapply(2:dim(index)[1], FUN = function(x) {
+    t(t(P0[index[x, 1]:index[x, 2], -1] %*% matheta[[x - 1]][, 1:3]) + theta[x - 1, 4:6])
+  })))
   P <- as_matrix(P)
   # sigma=solve(invSigma)
   N <- dim(P)[1]
@@ -497,10 +530,23 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NUL
   dD[, , 2] <- t(tmp) - tmp
   tmp <- temp * P[, 3]
   dD[, , 3] <- t(tmp) - tmp
-  dL[, 1:3] <- t(sapply(2:dim(index)[1], FUN = function(x) rowSums(sapply(index[x, 1]:index[x, 2], FUN = function(i) colSums(dDtotheta(P0[i, -1], b = t(t(P[-(index[x, 1]:index[x, 2]), ]) - theta[x - 1, 4:6]), temp = matheta[[x - 1]]) * temp[-(index[x, 1]:index[x, 2]), i])))))
-  dL[, 4] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 1]))
-  dL[, 5] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 2]))
-  dL[, 6] <- apply(index[-1, ], MARGIN = 1L, FUN = function(x) sum(dD[-(x[1]:x[2]), x[1]:x[2], 3]))
+  dL[, 1:3] <- t(sapply(2:dim(index)[1], FUN = function(x) {
+    idxs <- index[x, 1]:index[x, 2]
+    rowSums(sapply(idxs, FUN = function(i) colSums(dDtotheta(P0[i, -1], b = t(t(P[-idxs, ]) - theta[x - 1, 4:6]), temp = matheta[[x - 1]]) * temp[-idxs, i])))
+  }))
+  index_rn1 <- index[-1, ]
+  dL[, 4] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {
+    idxs <- x[1]:x[2]
+    sum(dD[-idxs, idxs, 1])
+  })
+  dL[, 5] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {
+    idxs <- x[1]:x[2]
+    sum(dD[-idxs, idxs, 2])
+  })
+  dL[, 6] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {
+    idxs <- x[1]:x[2]
+    sum(dD[-idxs, idxs, 3])
+  })
   dL / N / 3
 }
 
@@ -659,7 +705,10 @@ Sis <- function(d, pbin, A, b, invSigma, beta, cx0, mat0, q0, fL) {
     # cat(c(length(pbin[-N]),dim(mat[-N,-(N+1),])),"\n")
     temp <- Recall(d, pbin[-N], A, b, invSigma, beta, cx[-N, -N, ], mat[-N, -(N + 1), ], q0, fL)
     # cat(dim(temp),"\n")
-    addq <- optim(rnorm(3) / 5 + A %*% temp[dim(temp)[1], ] + b, fn = function(x) fL(cbind(pbin[(N - d):N], rbind(temp[(nrow(temp) - d + 1):nrow(temp), ], x)), A, b, invSigma, beta, cx[(N - d):N, (N - d):N, ], mat[(N - d):N, c(1, (N - d + 1):(N + 1)), ]))
+    addq <- optim(rnorm(3) / 5 + A %*% temp[dim(temp)[1], ] + b, fn = function(x) {
+      idxs <- (N - d):N
+      fL(cbind(pbin[idxs], rbind(temp[(nrow(temp) - d + 1):nrow(temp), ], x)), A, b, invSigma, beta, cx[idxs, idxs, ], mat[idxs, c(1, (N - d + 1):(N + 1)), ])
+    })
     addq <- addq$par
     return(as_matrix(rbind(temp, t(addq))))
   }
@@ -742,15 +791,21 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
     }
     index <- cbind(c(1, seq(from = m, to = N - m, by = m)), c(seq(from = m, to = N - m, by = m), N))
     index[-1, 1] <- index[-1, 1] + 1
-    lP <- lapply(1:dim(index)[1], FUN = function(x) subinitial(pbin[index[x, 1]:index[x, 2]], A0, b0, invSigma0, beta1, covmat0[index[x, 1]:index[x, 2], index[x, 1]:index[x, 2], ], mat[index[x, 1]:index[x, 2], c(1, index[x, 1]:index[x, 2] + 1), ], floglike, fdloglike))
+    lP <- lapply(1:dim(index)[1], FUN = function(x) {
+      idxs <- index[x, 1]:index[x, 2]
+      subinitial(pbin[idxs], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, c(1, idxs + 1), ], floglike, fdloglike)
+    })
     P <- matrix(0, nrow = N, ncol = 3)
     P[index[1, 1]:index[1, 2], ] <- lP[[1]]
     for (i in 2:dim(index)[1])
     {
-      theta <- optim(as.vector(rbind(diag(3), P[index[i - 1, 2], ] - P[index[i, 1], ] + rnorm(3) / 100)), fn = function(x) piece(x, P[1:(index[i - 1, 2]), ], lP[[i]], pbin[1:index[i, 2]], A0, b0, invSigma0, beta1, covmat0[1:index[i, 2], 1:index[i, 2], ], mat[1:index[i, 2], 1:(index[i, 2] + 1), ], floglike))
+      index_ri_c1 <- index[i, 1]
+      index_ri_c2 <- index[i, 2]
+      idxs <- 1:index_ri_c2
+      theta <- optim(as.vector(rbind(diag(3), P[index[i - 1, 2], ] - P[index_ri_c1, ] + rnorm(3) / 100)), fn = function(x) piece(x, P[1:(index[i - 1, 2]), ], lP[[i]], pbin[idxs], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, 1:(index_ri_c2 + 1), ], floglike))
       theta <- matrix(theta$par, nrow = 4, ncol = 3)
       # cat(dim(theta),"\t")
-      P[index[i, 1]:index[i, 2], ] <- lP[[i]] %*% theta[-4, ] + rep(1, times = index[i, 2] - index[i, 1] + 1) %*% t(theta[4, ])
+      P[index_ri_c1:index_ri_c2, ] <- lP[[i]] %*% theta[-4, ] + rep(1, times = index_ri_c2 - index_ri_c1 + 1) %*% t(theta[4, ])
     }
   }
   as_matrix(avsmth(pbin, P = P))
@@ -922,7 +977,10 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     index2 <- seq(from = 1, to = N - m2, by = m2)
     index2 <- c(index2, N)
     Psub <- P01
-    Psub <- do.call(rbind, lapply(1:dim(index)[1], FUN = function(x) tranS(suboptimz(pbin[index[x, 1]:index[x, 2]], P01[index[x, 1]:index[x, 2], ], A0, b0, invSigma0, beta1, covmat0[index[x, 1]:index[x, 2], index[x, 1]:index[x, 2], ], mat[index[x, 1]:index[x, 2], c(1, index[x, 1]:index[x, 2] + 1), ], floglike, fdloglike, 0), S2 = P01[index[x, 1]:index[x, 2], ])))
+    Psub <- do.call(rbind, args = lapply(1:dim(index)[1], FUN = function(x) {
+      idxs <- index[x, 1]:index[x, 2]
+      tranS(suboptimz(pbin[idxs], P01[idxs, ], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, c(1, idxs + 1), ], floglike, fdloglike, 0), S2 = P01[idxs, ])
+    }))
     Logsub <- floglike(cbind(pbin, Psub), A0, b0, invSigma0, beta1, covmat0, mat)
     cat("LLK after suboptimization: ", Logsub, "\n")
     if (Loglike0 <= Logsub) {
@@ -932,11 +990,12 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     Pframe <- tranS(suboptimz(pbin[index2], P01[index2, ], A0, b0, invSigma0, beta1, covmat0[index2, index2, ], mat[index2, c(1, index2 + 1), ], floglike, fdloglike, 0), S2 = P01[index2, ])
     Psub2 <- Psub
     for (i_sub in 1:(length(index2) - 1)) {
-      P_tmp <- P01[index2[i_sub]:index2[i_sub + 1], ]
+      idxs2 <- index2[i_sub]:index2[i_sub + 1]
+      P_tmp <- P01[idxs2, ]
       if (i_sub > 1) {
         P_tmp <- t(t(P_tmp) - P_tmp[1, ] + Psub2[index2[i_sub], ])
       }
-      Psub2[index2[i_sub]:index2[i_sub + 1], ] <- fbead(P_tmp, S2 = Pframe[i_sub:(i_sub + 1), ])
+      Psub2[idxs2, ] <- fbead(P_tmp, S2 = Pframe[i_sub:(i_sub + 1), ])
     }
     Psub2 <- tranS(Psub2, S2 = P01)
     # plot3d(Psub2[,1],Psub2[,2],Psub2[,3],type="l")
@@ -1045,7 +1104,10 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     usLoglike <- floglike(cbind(pbin, P), A, b, invSigma, beta1, covmat0, mat)
     cat("LLK after GLM: ", usLoglike, "\n")
     if (N > 1000 && iternum < (Maxiter - 5)) {
-      Psub <- do.call(rbind, lapply(1:dim(index)[1], FUN = function(x) tranS(suboptimz(pbin[index[x, 1]:index[x, 2]], P[index[x, 1]:index[x, 2], ], A0, b0, invSigma0, beta1, covmat0[index[x, 1]:index[x, 2], index[x, 1]:index[x, 2], ], mat[index[x, 1]:index[x, 2], c(1, index[x, 1]:index[x, 2] + 1), ], floglike, fdloglike, 0), S2 = P[index[x, 1]:index[x, 2], ])))
+      Psub <- do.call(rbind, args = lapply(1:dim(index)[1], FUN = function(x) {
+        idxs <- index[x, 1]:index[x, 2]
+        tranS(suboptimz(pbin[idxs], P[idxs, ], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, c(1, idxs + 1), ], floglike, fdloglike, 0), S2 = P[idxs, ])
+      }))
       Logsub <- floglike(cbind(pbin, Psub), A0, b0, invSigma0, beta1, covmat0, mat)
       cat("LLK after suboptimization: ", Logsub, "\n")
       if (Logsub >= usLoglike) {
@@ -1057,11 +1119,12 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       # Psub2=tranS(rbind(Pframe[1,],Psub2),P)
       Psub2 <- P
       for (i_sub in 1:(length(index2) - 1)) {
-        P_tmp <- P[index2[i_sub]:index2[i_sub + 1], ]
+        idxs2 <- index2[i_sub]:index2[i_sub + 1]
+        P_tmp <- P[idxs2, ]
         if (i_sub > 1) {
           P_tmp <- t(t(P_tmp) - P_tmp[1, ] + Psub2[index2[i_sub], ])
         }
-        Psub2[index2[i_sub]:index2[i_sub + 1], ] <- fbead(P_tmp, S2 = Pframe[i_sub:(i_sub + 1), ])
+        Psub2[idxs2, ] <- fbead(P_tmp, S2 = Pframe[i_sub:(i_sub + 1), ])
       }
       Psub2 <- tranS(Psub2, S2 = P)
       Logsub <- floglike(cbind(pbin, Psub2), A0, b0, invSigma0, beta1, covmat0, mat)
