@@ -185,7 +185,9 @@ rmol <- function(loci, P) {
     outlier <- v[, 1] | v[, 2] | v[, 3]
     spf <- splinefun
     P2 <- P[!outlier, ]
-    tmp <- sapply(1:m, FUN = function(x) spf(loci[!outlier], P2[, x])(loci[outlier]))
+    loci_outlier <- loci[outlier]
+    loci_nonoutlier <- loci[!outlier]
+    tmp <- sapply(1:m, FUN = function(x) spf(loci_nonoutlier, P2[, x])(loci_outlier))
     # print(tmp)
     P1[outlier, ] <- tmp
   }
@@ -1014,8 +1016,8 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   cat("number of nodes:", N, "\n")
   v <- lapply(1:C, FUN = function(i) which(mat[pos[[i]], pos[[i]] + 1, i] > 0))
   if (mk) {
-    ## HB: sigma <- solve(invSigma0)?!?
-    mak <- lapply(2:N, FUN = function(ii) fmkorder2(pbin[ii] - pbin[ii - 1], A = A0, b = b0, sigma = solve(invSigma0)))
+    sigma <- solve(invSigma0)
+    mak <- lapply(2:N, FUN = function(ii) fmkorder2(pbin[ii] - pbin[ii - 1], A = A0, b = b0, sigma = sigma))
     # lapply(mak,function(x) cat(dim(x),";"))
   } else {
     mak <- NULL
