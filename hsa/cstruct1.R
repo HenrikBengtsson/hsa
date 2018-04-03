@@ -117,7 +117,7 @@ finistructure <- function(S0, bin) {
   } else {
     pts <- c(S0[, 1], S0[n, 2])
     S0_c35 <- S0[, 3:5]
-    Y <- as_matrix(rbind(S0_c35, rnorm(3, mean = S0_c35[n, ], sd = colSds(S0_c35[-1, ] - S0_c35[-n, ]))))
+    Y <- as_rbind(S0_c35, rnorm(3, mean = S0_c35[n, ], sd = colSds(S0_c35[-1, ] - S0_c35[-n, ])))
     bin_c1 <- bin[, 1]
     S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin_c1)))
     S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5 / N)), nrow = N, ncol = 3L)
@@ -129,13 +129,13 @@ fmkorder_temp <- function(m, A, b, sigma, S) {
   if (m < 2) {
     mu <- A %*% S + b
     Sigma <- sigma
-    return(as_matrix(cbind(mu, Sigma, A)))
+    return(cbind(mu, Sigma, A))
   } else {
     tmp <- fmkorder_temp(m - 1, A, b, sigma, S)
     mu <- A %*% tmp[, 1] + b
     temp <- tmp[, -(1:4)] %*% A
     Sigma <- tmp[, 2:4] + (t(temp)) %*% sigma %*% (temp)
-    return(as_matrix(cbind(mu, Sigma, temp)))
+    return(cbind(mu, Sigma, temp))
   }
 }
 
@@ -304,7 +304,7 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
 }
 
 dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak = NULL) {
-  P <- as_matrix(P0[, -1])
+  P <- P0[, -1]
   sigma <- solve(invSigma)
   N <- dim(P)[1]
   C <- dim(cx)[3]
