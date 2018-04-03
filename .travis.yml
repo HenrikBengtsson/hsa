@@ -24,11 +24,11 @@ matrix:
         - jimhester/covr
       r_check_args: --no-codoc --no-examples --no-tests --ignore-vignettes
       after_success:
-        - travis_wait Rscript --version
-        - travis_wait Rscript -e 1+1
-        - travis_wait Rscript -e '1+2'
-        - travis_wait Rscript -e "'2+3'"
+        - travis_wait Rscript -e "'3*(1+2)'"
+        - travis_wait Rscript -e '3*(1+2)'
         - travis_wait Rscript -e "'covr::codecov(quiet = FALSE)'"
+        - travis_wait Rscript -e "'covr::codecov()'"
+        - travis_wait Rscript -e "covr::codecov()"
         - travis_wait Rscript -e 'covr::codecov(quiet = FALSE)'
       env:
         - NB='w/ covr' ## Just a label
