@@ -163,12 +163,19 @@ tranS <- local({
     S <- tmp %*% beta
     if (I_scale) {
       beta[-1, ] <- mean(abs(s$d)) * s$u %*% (diag(sign(s$d))) %*% t(s$v)
-      tmp <- optim(c(1, 0, 0, 0, 0, 0, 0), fn = function(x) sum(sqrt(rowSums((t(t(x[1] * S %*% angle2mat(x[2:4])) + x[5:7]) - S2)^2))))
+      tmp <- optim(c(1, 0, 0, 0, 0, 0, 0), fn = function(x) {
+        sum(sqrt(rowSums(
+          (t(t(x[1] * S %*% angle2mat(x[2:4])) + x[5:7]) - S2)^2
+        )))
+      })
       tmp <- tmp$par
       S <- t(t(tmp[1] * S %*% angle2mat(tmp[2:4])) + tmp[5:7])
     } else {
-      ## HB: rowSums((t(t(x)))?
-      tmp <- optim(zeros_9, fn = function(x) sum(sqrt(rowSums((t(t(S %*% angle2mat(x[4:6]) %*% fmirror(x[1:3])) + x[7:9]) - S2)^2))))
+      tmp <- optim(zeros_9, fn = function(x) {
+        sum(sqrt(rowSums(
+          (t(t(S %*% angle2mat(x[4:6]) %*% fmirror(x[1:3])) + x[7:9]) - S2)^2
+        )))
+      })
       tmp <- tmp$par
       S <- t(t(S %*% angle2mat(tmp[4:6]) %*% fmirror(tmp[1:3])) + tmp[7:9])
     }
