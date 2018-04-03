@@ -3,7 +3,8 @@
 **/*~
 .check
 .test
-.o
+src/*.o
+src/*.so
 .dll
 .async
 revdep/data.sqlite

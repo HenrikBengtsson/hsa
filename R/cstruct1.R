@@ -2,71 +2,17 @@
 # Zou, C., Zhang, Y., Ouyang, Z. (2016) HSA: integrating multi-track Hi-C data for genome-scale reconstruction of 3D chromatin structure. Submitted.
 
 ## sumsq(x) is a faster version of sum(x^2)
-sumsq <- local({
-  fcn <- NULL
-  make_fcn <- function() fcn <<- inline::cfunction(sig = methods::signature(x = "numeric"), language = "C", body = '
-  SEXP res;
-  R_xlen_t n = xlength(x);
-  double *xx = REAL(x);
-  double s = 0;
-  for (R_xlen_t ii = 0; ii < n; ++ii) s += xx[ii] * xx[ii];
-  return ScalarReal(s);
-')
-  function(...) { if (is.null(fcn)) make_fcn(); fcn(...) }
-})
+sumsq <- function(x) {
+  .Call(C_sumsq, x)
+}
 
-## sumprod(x, y) is a faster version of sum(x * y)
-sumprod <- local({
-  fcn <- NULL
-  make_fcn <- function() fcn <<- inline::cfunction(sig = methods::signature(x = "numeric", y = "numeric"), language = "C", body = '
-  SEXP res;
-  R_xlen_t n = xlength(x);
-  double *xx = REAL(x);
-  double *yy = REAL(y);
-  double s = 0;
-  if (xlength(y) != n) error("Argument \'x\' and \'y\' are of different lengths");
-  for (R_xlen_t ii = 0; ii < n; ++ii) s += xx[ii] * yy[ii];
-  return ScalarReal(s);
-')
-  function(...) { if (is.null(fcn)) make_fcn(); fcn(...) }
-})
+sumprod <- function(x, y) {
+  .Call(C_sumprod, x, y)
+}
 
-##     T <- -C * D ^ beta
-negCDbeta <- local({
-  fcn <- NULL
-  make_fcn <- function() fcn <<- inline::cfunction(sig = methods::signature(C = "numeric", D = "numeric", beta = "numeric"), language = "C", body = '
-  SEXP res;
-
-  double *c = REAL(C);
-  double *d = REAL(D);
-  double b = REAL(beta)[0];
-
-  SEXP dim = getAttrib(C, R_DimSymbol);
-  int nrow = INTEGER(dim)[0];
-  int ncol = INTEGER(dim)[1];
-
-  dim = getAttrib(D, R_DimSymbol);
-  if (INTEGER(dim)[0] != nrow)
-    error("Argument \'C\' and \'D\' have different number of rows");
-  if (INTEGER(dim)[1] != ncol)
-    error("Argument \'C\' and \'D\' have different number of columns");
-
-  PROTECT(res = allocMatrix(REALSXP, nrow, ncol));
-  double *y = REAL(res);
-
-  R_xlen_t ii = 0;
-  for (int cc = 0; cc < ncol; ++cc) {
-    for (int rr = 0; rr < nrow; ++rr) {
-      y[ii] = - c[ii] * pow(d[ii], b);
-      ii++;
-    }
-  }
-
-  UNPROTECT(1);
-  return res;
-')
-  function(...) { if (is.null(fcn)) make_fcn(); fcn(...) }
-})
+negCDbeta <- function(C, D, beta) {
+  .Call(C_negCDbeta, C, D, beta)
+}
 
 
 ## PERFORMANCE: dist_matrix(x) is a faster version of as.matrix(dist(x)),

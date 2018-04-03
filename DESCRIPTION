@@ -7,8 +7,7 @@ Imports:
     utils,
     MASS,
     matrixStats
-Suggests:
-    inline
+NeedsCompilation: yes
 Title: Non-Official Fork: Integrating Multi-Track Hi-C Data for Genome-Scale Reconstruction of 3D Chromatin Structure
 Authors@R: c(person("Henrik", "Bengtsson", role=c("aut", "cre", "cph"),
                                           email = "henrikb@braju.com"))
