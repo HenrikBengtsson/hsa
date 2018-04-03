@@ -129,23 +129,31 @@ finistructure <- function(S0, bin) {
   S
 }
 
+## PERFORMANCE: fmkorder_temp(), fmkorder(), and fmkorder2() now returns a list of
+## parameter estimates that can be used "as is" in the likelihood calculations.
+## Previously these functions would stack these parameters up as columns in a matrix
+## which then had to be extracted again.  Returning the parameters as is also makes
+## it much clear what is calculated.
 fmkorder_temp <- function(m, A, b, sigma, S) {
   if (m < 2) {
     mu <- A %*% S + b
     Sigma <- sigma
-    return(cbind(mu, Sigma, A))
   } else {
     tmp <- fmkorder_temp(m - 1, A, b, sigma, S)
-    mu <- A %*% tmp[, 1] + b
-    temp <- tmp[, -(1:4)] %*% A
-    Sigma <- tmp[, 2:4] + (t(temp)) %*% sigma %*% (temp)
-    return(cbind(mu, Sigma, temp))
+    mu <- A %*% tmp$mu + b
+    temp <- tmp$A %*% A
+    Sigma <- tmp$Sigma + t(temp) %*% sigma %*% temp
+    A <- temp
   }
+  list(mu = mu, Sigma = Sigma, A = A)
 }
 
 fmkorder <- function(m, A, b, sigma, S) {
   temp <- fmkorder_temp(m, A, b, sigma, S)
-  temp[, 2:4] <- solve(temp[, 2:4])
+  Sigma <- temp$Sigma
+  Sigma <- solve(Sigma)
+  temp$mu <- c(temp$mu)
+  temp$Sigma <- Sigma
   temp
 }
 
@@ -376,13 +384,19 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
   if (is.null(mak)) {
     L <- L + sum(sapply(2:N, FUN = function(ii) {
       nmp <- fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
-      -(P[ii, ] - nmp[, 1]) %*% (nmp[, 2:4]) %*% (P[ii, ] - nmp[, 1]) / 2 + log_det(nmp[, 2:4]) / 2
+      R_ii <- P[ii, ] - nmp$mu
+      Sigma <- nmp$Sigma
+      -R_ii %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
     }) / N / 3)
   } else {
     L <- L + sum(sapply(2:N, FUN = function(ii) {
       mak_ii1 <- mak[[ii - 1L]]
-      mu <- mak_ii1[, 1] + mak_ii1[, 5:7] %*% P[ii - 1L, ]
-      -t(P[ii, ] - mu) %*% mak_ii1[, 2:4] %*% (P[ii, ] - mu) / 2 + log_det(mak_ii1[, 2:4]) / 2
+      mu <- mak_ii1$mu
+      Sigma <- mak_ii1$Sigma
+      A <- mak_ii1$A
+      mu <- mu + A %*% P[ii - 1L, ]
+      R_ii <- P[ii, ] - mu
+      -t(R_ii) %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
     })) / N / 3
   }
   L
@@ -419,28 +433,44 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
   tmp <- temp * P[, 3]
   dL[, 3] <- colSums(t(tmp) - tmp) / N / 3
   if (is.null(mak)) {
-    nmp <- lapply(2:N, FUN = function(ii) fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ]))
-    temp1 <- sapply(2:N, FUN = function(ii) -t(P[ii, ] - nmp[[ii - 1L]][, 1]) %*% nmp[[ii - 1L]][, 2:4]) / N / 3
+    nmp <- lapply(2:N, FUN = function(ii) {
+      fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
+    })
+    
+    temp1 <- sapply(2:N, FUN = function(ii) {
+      nmp_iim1 <- nmp[[ii - 1L]]
+      mu <- nmp_iim1$mu
+      Sigma <- nmp_iim1$Sigma
+      -t(P[ii, ] - mu) %*% Sigma
+    }) / N / 3
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
+    
     temp2 <- sapply(1:(N - 1L), FUN = function(ii) {
       nmp_ii <- nmp[[ii]]
-      nmp_ii_c57 <- nmp_ii[, 5:7]
-      nmp_ii_c57_t <- t(nmp_ii[, 5:7])
-      -nmp_ii_c57_t %*% nmp_ii[, 2:4] %*% nmp_ii_c57 %*% P[ii, ] - nmp_ii_c57_t %*% nmp_ii[, 2:4] %*% (nmp_ii[, 1] - nmp_ii[, 5:7] %*% P[ii, ] - P[ii + 1L, ])
+      mu <- nmp_ii$mu
+      Sigma <- nmp_ii$Sigma
+      A <- nmp_ii$A
+      A_t <- t(A)
+      -A_t %*% Sigma %*% A %*% P[ii, ] - A_t %*% Sigma %*% (mu - A %*% P[ii, ] - P[ii + 1L, ])
     }) / N / 3
     dL[1:(N - 1L), ] <- dL[1:(N - 1L), ] + t(temp2)
   } else {
     temp1 <- sapply(2:N, FUN = function(ii) {
       mak_ii1 <- mak[[ii - 1L]]
-      mu <- mak_ii1[, 1] + mak_ii1[, 5:7] %*% P[ii - 1L, ]
-      -t(P[ii, ] - mu) %*% mak_ii1[, 2:4]
+      mu <- mak_ii1$mu
+      Sigma <- mak_ii1$Sigma
+      A <- mak_ii1$A
+      mu <- mu + A %*% P[ii - 1L, ]
+      -t(P[ii, ] - mu) %*% Sigma
     }) / N / 3
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
     temp2 <- sapply(1:(N - 1L), FUN = function(ii) {
       mak_ii <- mak[[ii]]
-      mak_ii_c57 <- mak_ii[, 5:7]
-      mak_ii_c57_t <- t(mak_ii_c57)
-      -mak_ii_c57_t %*% mak_ii[, 2:4] %*% mak_ii_c57 %*% P[ii, ] - mak_ii_c57_t %*% mak_ii[, 2:4] %*% (mak_ii[, 1] - P[ii + 1L, ])
+      mu <- mak_ii$mu
+      Sigma <- mak_ii$Sigma
+      A <- mak_ii$A
+      A_t <- t(A)
+      -A_t %*% Sigma %*% A %*% P[ii, ] - A_t %*% Sigma %*% (mu - P[ii + 1L, ])
     }) / N / 3
     dL[1:(N - 1L), ] <- dL[1:(N - 1L), ] + t(temp2)
   }
@@ -458,7 +488,9 @@ mkcloglikelihood <- function(theta, P0) {
   sigma <- solve(invSigma)
   temp <- sapply(2:N, FUN = function(ii) {
     nmp <- fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
-    -(P[ii, ] - nmp[, 1]) %*% (nmp[, 2:4]) %*% (P[ii, ] - nmp[, 1]) / 2 + log_det(nmp[, 2:4]) / 2
+    R_ii <- P[ii, ] - nmp$mu
+    Sigma <- nmp$Sigma
+    -R_ii %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
   })
   mean(temp) / 3
 }
