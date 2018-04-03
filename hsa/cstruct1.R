@@ -335,7 +335,7 @@ dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, ma
   for (i in 1:C) {
     pos_i <- pos[[i]]
     v_i <- v[[i]]
-    beta_i <- beta[[i]]
+    beta_i <- beta[i]
     distmat_i <- distmat[pos_i, pos_i]
     temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta_i * cx[pos_i, pos_i, i] * (distmat_i^(beta_i / 2 - 1))
     temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta_i * mat[pos_i, pos_i + 1L, i][v_i] / distmat_i[v_i]
@@ -375,7 +375,7 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
   for (i in 1:C) {
     pos_i <- pos[[i]]
     v_i <- v[[i]]
-    beta_i <- beta[[i]]
+    beta_i <- beta[i]
     distmat_i <- distmat[pos_i, pos_i]
     cx_i <- cx[pos_i, pos_i, i]
     temp <- -cx_i * distmat_i^beta_i
