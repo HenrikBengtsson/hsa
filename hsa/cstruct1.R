@@ -45,10 +45,21 @@ as_matrix <- function(x) {
 }
 
 ## PERFORMANCE: Avoid overhead from S3 dispatch on solve()
-solve <- function(a, b = NULL) {
-  if (is.null(b)) b <- diag(1, nrow = nrow(a))
-  solve.default(a, b)
-}
+solve <- local({
+  bs <- list()
+  function(a, b = NULL) {
+    if (is.null(b)) {
+      n <- nrow(a)
+      ## Memoization of 'b'
+      if (n <= length(bs)) b <- bs[[n]]
+      if (is.null(b)) {
+        b <- diag(1, nrow = n)
+        bs[[n]] <<- b
+      }
+    }
+    solve.default(a, b)
+  }
+})
 
 ## PERFORMANCE: Avoid overhead from setting dimnames in cbind() and rbind()
 cbind <- local({
