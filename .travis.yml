@@ -25,7 +25,6 @@ matrix:
       r_check_args: --no-codoc --no-examples --no-tests --ignore-vignettes
       after_success:
         - travis_wait 40 Rscript -e "covr::codecov(quiet=FALSE)"
-        - travis_wait 40 Rscript -e "covr::codecov()"
       env:
         - NB='w/ covr' ## Just a label
 
