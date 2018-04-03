@@ -502,8 +502,9 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
       mu <- nmp_ii$mu
       Sigma <- nmp_ii$Sigma
       A <- nmp_ii$A
-      A_t <- t(A)
-      -A_t %*% Sigma %*% A %*% P[ii, ] - A_t %*% Sigma %*% (mu - A %*% P[ii, ] - P[ii + 1L, ])
+      T <- A %*% P[ii, ]
+      U <- t(A) %*% Sigma
+      -U %*% T - U %*% (mu - T - P[ii + 1L, ])
     }) / (3 * N)
     dL[1:(N - 1L), ] <- dL[1:(N - 1L), ] + t(temp2)
   } else {
@@ -521,8 +522,8 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
       mu <- mak_ii$mu
       Sigma <- mak_ii$Sigma
       A <- mak_ii$A
-      A_t <- t(A)
-      -A_t %*% Sigma %*% A %*% P[ii, ] - A_t %*% Sigma %*% (mu - P[ii + 1L, ])
+      U <- t(A) %*% Sigma
+      -U %*% A %*% P[ii, ] - U %*% (mu - P[ii + 1L, ])
     }) / (3 * N)
     dL[1:(N - 1L), ] <- dL[1:(N - 1L), ] + t(temp2)
   }
