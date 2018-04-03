@@ -194,13 +194,16 @@ fbead <- function(S1, S2) {
   S
 }
 
-fmirror <- function(v) {
-  y <- diag(3)
-  if (any(v)) {
-    y <- diag(3) - v %*% t(v) / sumsq(v)
+fmirror <- local({
+  diag_3 <- diag(3)
+  function(v) {
+    if (any(v)) {
+      diag_3 - v %*% t(v) / sumsq(v)
+    } else {
+      diag_3
+    }
   }
-  y
-}
+})
 
 tranS <- local({
   zeros_9 <- rep(0, times = 9)
@@ -213,6 +216,7 @@ tranS <- local({
     beta[-1, ] <- s$u %*% (diag(sign(s$d))) %*% t(s$v)
     S <- tmp %*% beta
     if (I_scale) {
+                              ## HB: vvv - below part same as above - vvv
       beta[-1, ] <- mean(abs(s$d)) * s$u %*% (diag(sign(s$d))) %*% t(s$v)
       tmp <- optim(c(1, 0, 0, 0, 0, 0, 0), fn = function(x) {
         sum(sqrt(rowSums(
