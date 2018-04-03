@@ -188,9 +188,9 @@ fbead <- function(S1, S2) {
   S2_r2 <- S2[2, ]
   n <- fnormvec(S_rm - S_r1, S2_r2 - S2_r1)
   theta <- fangle(S_rm - S_r1, S2_r2 - S2_r1)
-  S <- t(t(S) - S_r1)
-  S <- t(apply(S, MARGIN = 1L, FUN = function(x) frotanyvec(x, v = n, theta = theta)))
-  S <- t(t(S) - S[1, ] + S1[1, ])
+  S_t <- t(S) - S_r1
+  S_t <- apply(S_t, MARGIN = 2L, FUN = frotanyvec, v = n, theta = theta)
+  S <- t(S_t - S_t[, 1] + S1[1, ])
   S
 }
 
