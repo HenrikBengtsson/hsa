@@ -39,6 +39,17 @@ dist_matrix <- function(x, square = FALSE) {
   df + t(df)
 }
 
+## PERFORMANCE: log_det(x) is a faster version of log(det(x)), because
+## it avoids overhead from S3 method dispatching and skips an internal
+## log(exp(t)) step.
+log_det <- function(x) {
+  z <- determinant.matrix(x, logarithm = TRUE)
+#  d <- c(z$sign * exp(z$modulus))
+#  log(d)
+  if (z$sign < 0) stop("Log-determinant: NaN")
+  c(z$modulus)
+}
+
 ## PERFORMANCE: Avoid overhead from S3 dispatch on solve()
 solve <- local({
   bs <- list()
@@ -365,13 +376,13 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
   if (is.null(mak)) {
     L <- L + sum(sapply(2:N, FUN = function(ii) {
       nmp <- fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
-      -(P[ii, ] - nmp[, 1]) %*% (nmp[, 2:4]) %*% (P[ii, ] - nmp[, 1]) / 2 + log(det(nmp[, 2:4])) / 2
+      -(P[ii, ] - nmp[, 1]) %*% (nmp[, 2:4]) %*% (P[ii, ] - nmp[, 1]) / 2 + log_det(nmp[, 2:4]) / 2
     }) / N / 3)
   } else {
     L <- L + sum(sapply(2:N, FUN = function(ii) {
       mak_ii1 <- mak[[ii - 1L]]
       mu <- mak_ii1[, 1] + mak_ii1[, 5:7] %*% P[ii - 1L, ]
-      -t(P[ii, ] - mu) %*% mak_ii1[, 2:4] %*% (P[ii, ] - mu) / 2 + log(det(mak_ii1[, 2:4])) / 2
+      -t(P[ii, ] - mu) %*% mak_ii1[, 2:4] %*% (P[ii, ] - mu) / 2 + log_det(mak_ii1[, 2:4]) / 2
     })) / N / 3
   }
   L
@@ -447,7 +458,7 @@ mkcloglikelihood <- function(theta, P0) {
   sigma <- solve(invSigma)
   temp <- sapply(2:N, FUN = function(ii) {
     nmp <- fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
-    -(P[ii, ] - nmp[, 1]) %*% (nmp[, 2:4]) %*% (P[ii, ] - nmp[, 1]) / 2 + log(det(nmp[, 2:4])) / 2
+    -(P[ii, ] - nmp[, 1]) %*% (nmp[, 2:4]) %*% (P[ii, ] - nmp[, 1]) / 2 + log_det(nmp[, 2:4]) / 2
   })
   mean(temp) / 3
 }
