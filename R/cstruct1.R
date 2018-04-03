@@ -1,11 +1,10 @@
 # Publications that use results obtained from this software please include a citation of the paper:
 # Zou, C., Zhang, Y., Ouyang, Z. (2016) HSA: integrating multi-track Hi-C data for genome-scale reconstruction of 3D chromatin structure. Submitted.
 
-library(MASS)
-colSds <- matrixStats::colSds
-
 ## sumsq(x) is a faster version of sum(x^2)
-sumsq <- inline::cfunction(sig = methods::signature(x = "numeric"), language = "C", body = '
+sumsq <- local({
+  fcn <- NULL
+  make_fcn <- function() fcn <<- inline::cfunction(sig = methods::signature(x = "numeric"), language = "C", body = '
   SEXP res;
   R_xlen_t n = xlength(x);
   double *xx = REAL(x);
@@ -13,9 +12,13 @@ sumsq <- inline::cfunction(sig = methods::signature(x = "numeric"), language = "
   for (R_xlen_t ii = 0; ii < n; ++ii) s += xx[ii] * xx[ii];
   return ScalarReal(s);
 ')
+  function(...) { if (is.null(fcn)) make_fcn(); fcn(...) }
+})
 
 ## sumprod(x, y) is a faster version of sum(x * y)
-sumprod <- inline::cfunction(sig = methods::signature(x = "numeric", y = "numeric"), language = "C", body = '
+sumprod <- local({
+  fcn <- NULL
+  make_fcn <- function() fcn <<- inline::cfunction(sig = methods::signature(x = "numeric", y = "numeric"), language = "C", body = '
   SEXP res;
   R_xlen_t n = xlength(x);
   double *xx = REAL(x);
@@ -25,9 +28,13 @@ sumprod <- inline::cfunction(sig = methods::signature(x = "numeric", y = "numeri
   for (R_xlen_t ii = 0; ii < n; ++ii) s += xx[ii] * yy[ii];
   return ScalarReal(s);
 ')
+  function(...) { if (is.null(fcn)) make_fcn(); fcn(...) }
+})
 
 ##     T <- -C * D ^ beta
-negCDbeta <- inline::cfunction(sig = methods::signature(C = "numeric", D = "numeric", beta = "numeric"), language = "C", body = '
+negCDbeta <- local({
+  fcn <- NULL
+  make_fcn <- function() fcn <<- inline::cfunction(sig = methods::signature(C = "numeric", D = "numeric", beta = "numeric"), language = "C", body = '
   SEXP res;
 
   double *c = REAL(C);
@@ -58,12 +65,15 @@ negCDbeta <- inline::cfunction(sig = methods::signature(C = "numeric", D = "nume
   UNPROTECT(1);
   return res;
 ')
+  function(...) { if (is.null(fcn)) make_fcn(); fcn(...) }
+})
 
 
 ## PERFORMANCE: dist_matrix(x) is a faster version of as.matrix(dist(x)),
 ## because it avoids the overhead from S3 method dispatching, handling of
 ## non-needed attributes etc.  Moreover, dist_matrix(x, square = TRUE) is
 ## avoids internal duplication of the distance matrix.
+#' @importFrom stats dist
 dist_matrix <- function(x, square = FALSE) {
   x <- dist(x)
   size <- attr(x, "Size")
@@ -142,6 +152,8 @@ momentum <- local({
 
 momentum0 <- function(p0) p0
 
+#' @importFrom stats rnorm splinefun
+#' @importFrom matrixStats colSds
 finistructure <- function(S0, bin) {
   n <- dim(S0)[1]
   N <- nrow(bin)
@@ -154,7 +166,7 @@ finistructure <- function(S0, bin) {
   } else {
     pts <- c(S0[, 1], S0[n, 2])
     S0_c35 <- S0[, 3:5]
-    Y <- as_rbind(S0_c35, rnorm(3, mean = S0_c35[n, ], sd = colSds(S0_c35[-1, ] - S0_c35[-n, ])))
+    Y <- rbind(S0_c35, rnorm(3, mean = S0_c35[n, ], sd = colSds(S0_c35[-1, ] - S0_c35[-n, ])))
     bin_c1 <- bin[, 1]
     S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin_c1)))
     S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5 / N)), nrow = N, ncol = 3L)
@@ -238,6 +250,8 @@ fmirror <- local({
   }
 })
 
+#' @importFrom stats optim
+#' @importFrom MASS ginv
 tranS <- local({
   zeros_9 <- rep(0, times = 9)
   function(S1, S2, I_scale = TRUE) {
@@ -271,6 +285,7 @@ tranS <- local({
   }
 })
 
+#' @importFrom stats median splinefun
 rmol <- function(loci, P) {
   n <- dim(P)[1]
   m <- dim(P)[2]
@@ -308,6 +323,7 @@ rmol <- function(loci, P) {
   P1
 }
 
+#' @importFrom stats filter
 avsmth <- local({
   thirds_3 <- rep(1/3, times = 3L)
   function(bin, P) {
@@ -749,6 +765,7 @@ Leapfrog <- function(grad_U, L, epsilon, p0, q0, fM) {
   list(p, q)
 }
 
+#' @importFrom stats rnorm runif
 HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE) {
   N <- dim(current_q0)[1]
   m <- dim(current_q0)[2]
@@ -802,6 +819,7 @@ HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE) 
   }
 }
 
+#' @importFrom stats rnorm runif
 HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE) {
   N <- dim(current_q0)[1]
   m <- dim(current_q0)[2]
@@ -847,6 +865,7 @@ HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
 }
 
 
+#' @importFrom stats optim rnorm
 Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
   # cat(c(length(pbin[1:N]),dim(mat[1:N,1:(N+1),]),dim(cx[1:N,1:N,])),"~")
   if (N == 2) {
@@ -872,6 +891,7 @@ Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
   }
 }
 
+#' @importFrom stats optim rnorm
 Sis <- function(d, pbin, A, b, invSigma, beta, cx0, mat0, q0, fL) {
   N <- dim(mat0)[1]
   # cat(length(pbin),",")
@@ -968,6 +988,7 @@ piece <- function(theta0, P1, P2, pbin, A0, b0, invSigma0, beta1, covmat0, mat, 
   -floglike(cbind(pbin, rbind(P1, t(t(P2 %*% theta[-4, ]) + theta[4, ]))), A0, b0, invSigma0, beta1, covmat0, mat)
 }
 
+#' @importFrom stats optim rnorm
 finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdloglike) {
   N <- length(pbin)
   if (N <= 500) {
@@ -1007,6 +1028,9 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
   # return(P)
 }
 
+#' @importFrom stats glm optim poisson runif
+#' @importFrom utils write.table
+#' @export
 fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog, epslon, mkfix = 0, rho = 0, mk, initialS = NULL, coarsefit = TRUE, rmoutlier = FALSE, fitmode = 0) {
   floglike <- loglikelihood0
   fdloglike <- dloglikelihood0

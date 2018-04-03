@@ -1,0 +1,21 @@
+Package: hsa
+Version: 0.0.0-9000
+Depends:
+    R (>= 3.4.0),
+Imports:
+    stats,
+    utils,
+    MASS,
+    matrixStats
+Suggests:
+    inline
+Title: Non-Official Fork: Integrating Multi-Track Hi-C Data for Genome-Scale Reconstruction of 3D Chromatin Structure
+Authors@R: c(person("Henrik", "Bengtsson", role=c("aut", "cre", "cph"),
+                                          email = "henrikb@braju.com"))
+Description: Integrating Multi-Track Hi-C Data for Genome-Scale Reconstruction of 3D Chromatin Structure.  A non-official fork.
+License: LGPL (>= 2.1)
+LazyLoad: TRUE
+URL: https://github.com/HenrikBengtsson/hsa
+BugReports: https://github.com/HenrikBengtsson/hsa/issues
+RoxygenNote: 6.0.1
+Roxygen: list(markdown = TRUE)

@@ -1,20 +1,17 @@
-library("hsa")
+library("profvis")
+`[.profvis` <- function(x, i, ...) { prof <- x$x$message$prof; prof <- prof[i, ...]; x$x$message$prof <- prof; x }
 
-outpath <- file.path("tests", ".checks")
+source("hsa/cstruct1.R")
+
+outpath <- file.path("tests", ".checks", "profvis")
 dir.create(outpath, recursive = TRUE, showWarnings = FALSE)
 outprefix <- file.path(outpath, "hap1_full_all_22_100000")
 cat(sprintf("Prefix of output files: %s\n", sQuote(outprefix)))
 
 # Input data
-path <- system.file("exdata", package = "hsa")
-contacts <- file.path(path, "contact_hap1_full_all_22_100000.txt")
+contacts <- file.path("inst", "exdata", "contact_hap1_full_all_22_100000.txt")
 
 ## Parameters
-mak <- 1L
-Iscovfile <- FALSE
-K <- 1L
-lscov0 <- 0L
-
 data <- read.table(file = contacts, header = FALSE)
 data <- as.matrix(data)
 lsmap0 <- list(data)
@@ -35,10 +32,10 @@ write.table <- function(x, ...) {
 ## Benchmarking history:
 ## commit 0880732: ~270 secs
 ## commit ccc77de: ~265 secs
-dt <- system.time({
-  out <- fmain(lsmap0 = lsmap0, lscov0 = lscov0, outfile = outprefix,
-               Maxiter = 3L, submaxiter = 100L, lambda = 25, Leapfrog = 20,
-               epslon = 0.003, mkfix = 0, rho = 0, mk = mak)
+pv <- profvis::profvis({
+  out <- fmain(lsmap0 = lsmap0, lscov0 = 0L, outfile = outprefix,
+               Maxiter = 1L, submaxiter = 100L, lambda = 25, Leapfrog = 20,
+               epslon = 0.003, mkfix = 0, rho = 0, mk = 1L)
 })
 print(out)
 cat("\n\n")
@@ -52,17 +49,14 @@ cat(sprintf("- file 2: %s (%d bytes; %s)\n",
             sQuote(basename(file2)), file.size(file2), tools::md5sum(file2)))
 cat("\n\n")
 
+file3 <- sprintf("%s.profvis.rds", outprefix)
+saveRDS(pv, file = file3)
+
 cat("\n\n")
 print(sessionInfo())
 
-cat("\nProcessing time:\n")
-print(dt)
+## Render profvis results
+print(head(pv, n = 100e3))
 
-cat("\nValidation:\n")
-data0_1 <- read.table(file.path(path, basename(file1)), header = FALSE)
-data1_1 <- read.table(file1, header = FALSE)
-stopifnot(all.equal(data1_1, data0_1))
 
-data0_2 <- read.table(file.path(path, basename(file2)), header = FALSE)
-data1_2 <- read.table(file2, header = FALSE)
-stopifnot(all.equal(data1_2, data0_2))
+
