@@ -241,7 +241,7 @@ rmol <- function(loci, P) {
   n <- dim(P)[1]
   m <- dim(P)[2]
   P1 <- P
-  v <- sapply(1:m, FUN = function(x) is.na(P1[, x]) | is.infinite(P1[, x]))
+  v <- !is.finite(P1)
   if (any(v)) {
     outlier <- v[, 1] | v[, 2] | v[, 3]
     spf <- splinefun
@@ -252,11 +252,14 @@ rmol <- function(loci, P) {
     # print(tmp)
     P1[outlier, ] <- tmp
   }
+  
   d1 <- sqrt(rowSums((P1[-1, ] - P1[-n, ])^2))
   cutoff <- 10 * median(d1)
-  if (any(d1 >= cutoff)) {
-    outlier <- (d1 >= cutoff)
+  outlier <- (d1 >= cutoff)
+  if (any(outliers)) {
     v <- which(outlier)
+    ## HB: The below does lots of t(x) over and over.
+    ## Not optimized because not covered by the test.
     for (i in 1:length(v)) {
       v_i <- v[i]
       idxs <- 1:v[i]
