@@ -256,7 +256,7 @@ rmol <- function(loci, P) {
   d1 <- sqrt(rowSums((P1[-1, ] - P1[-n, ])^2))
   cutoff <- 10 * median(d1)
   outlier <- (d1 >= cutoff)
-  if (any(outliers)) {
+  if (any(outlier)) {
     v <- which(outlier)
     ## HB: The below does lots of t(x) over and over.
     ## Not optimized because not covered by the test.
