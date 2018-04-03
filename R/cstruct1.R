@@ -47,7 +47,7 @@ finistructure <- function(S0, bin) {
     S0_c35 <- S0[, 3:5]
     Y <- rbind(S0_c35, rnorm(3, mean = S0_c35[n, ], sd = colSds(S0_c35[-1, ] - S0_c35[-n, ])))
     bin_c1 <- bin[, 1]
-    S <- normP(sapply(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin_c1)))
+    S <- normP(sapply2(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin_c1)))
     S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5 / N)), nrow = N, ncol = 3L)
   }
   S
@@ -174,7 +174,7 @@ rmol <- function(loci, P) {
     P2 <- P[!outlier, ]
     loci_outlier <- loci[outlier]
     loci_nonoutlier <- loci[!outlier]
-    tmp <- sapply(1:m, FUN = function(x) spf(loci_nonoutlier, P2[, x])(loci_outlier))
+    tmp <- sapply2(1:m, FUN = function(x) spf(loci_nonoutlier, P2[, x])(loci_outlier))
     P1[outlier, ] <- tmp
   }
   
@@ -310,14 +310,14 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
     L <- L + L_i
   }
   if (is.null(mak)) {
-    L <- L + sum(sapply(2:N, FUN = function(ii) {
+    L <- L + sum(sapply2(2:N, FUN = function(ii) {
       nmp <- fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
       R_ii <- P[ii, ] - nmp[["mu"]]
       Sigma <- nmp[["Sigma"]]
       -R_ii %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
     })) / (3 * N)
   } else {
-    L <- L + sum(sapply(2:N, FUN = function(ii) {
+    L <- L + sum(sapply2(2:N, FUN = function(ii) {
       mak_ii1 <- mak[[ii - 1L]]
       mu <- mak_ii1[["mu"]]
       Sigma <- mak_ii1[["Sigma"]]
@@ -363,7 +363,7 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
       fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
     })
     
-    temp1 <- sapply(2:N, FUN = function(ii) {
+    temp1 <- sapply2(2:N, FUN = function(ii) {
       nmp_iim1 <- nmp[[ii - 1L]]
       mu <- nmp_iim1[["mu"]]
       Sigma <- nmp_iim1[["Sigma"]]
@@ -371,7 +371,7 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
     }) / (3 * N)
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
     
-    temp2 <- sapply(1:(N - 1L), FUN = function(ii) {
+    temp2 <- sapply2(1:(N - 1L), FUN = function(ii) {
       nmp_ii <- nmp[[ii]]
       mu <- nmp_ii[["mu"]]
       Sigma <- nmp_ii[["Sigma"]]
@@ -382,7 +382,7 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
     }) / (3 * N)
     dL[1:(N - 1L), ] <- dL[1:(N - 1L), ] + t(temp2)
   } else {
-    temp1 <- sapply(2:N, FUN = function(ii) {
+    temp1 <- sapply2(2:N, FUN = function(ii) {
       mak_ii1 <- mak[[ii - 1L]]
       mu <- mak_ii1[["mu"]]
       Sigma <- mak_ii1[["Sigma"]]
@@ -391,7 +391,7 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
       -t(P[ii, ] - mu) %*% Sigma
     }) / (3 * N)
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
-    temp2 <- sapply(1:(N - 1L), FUN = function(ii) {
+    temp2 <- sapply2(1:(N - 1L), FUN = function(ii) {
       mak_ii <- mak[[ii]]
       mu <- mak_ii[["mu"]]
       Sigma <- mak_ii[["Sigma"]]
@@ -413,7 +413,7 @@ mkcloglikelihood <- function(theta, P0) {
   invSigma[upper.tri(invSigma, diag = TRUE)] <- theta[-(1:12)]
   invSigma <- invSigma + t(invSigma) - diag(diag(invSigma))
   sigma <- solve(invSigma)
-  temp <- sapply(2:N, FUN = function(ii) {
+  temp <- sapply2(2:N, FUN = function(ii) {
     nmp <- fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
     R_ii <- P[ii, ] - nmp[["mu"]]
     Sigma <- nmp[["Sigma"]]
@@ -423,7 +423,7 @@ mkcloglikelihood <- function(theta, P0) {
 }
 
 dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
-  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, args = sapply(2:dim(index)[1], FUN = function(x) {
+  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, args = sapply2(2:dim(index)[1], FUN = function(x) {
     t(t(P0[index[x, 1]:index[x, 2], -1] %*% matrix(theta[x - 1L, 1:9], nrow = 3L, ncol = 3L)) + theta[x - 1L, 10:12])
   })))
 
@@ -464,7 +464,7 @@ dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL
 
   dL[, 1:9] <- dL[, 1:9] + t(apply(index_rn1, MARGIN = 1L, FUN = function(x) {
     idxs <- x[1]:x[2]
-    sapply(2:4, FUN = function(k) {
+    sapply2(2:4, FUN = function(k) {
       P0t <- P0[idxs, k]
       T_1 <- dD[idxs, idxs, 1] * P0t
       T_2 <- dD[idxs, idxs, 2] * P0t
@@ -541,7 +541,7 @@ dDtotheta <- function(p, b, temp) {
 
 dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
   matheta <- lapply(2:dim(index)[1], FUN = function(x) rotamat(theta[x - 1L, ]))
-  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, args = sapply(2:dim(index)[1], FUN = function(x) {
+  P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, args = sapply2(2:dim(index)[1], FUN = function(x) {
     t(t(P0[index[x, 1]:index[x, 2], -1] %*% matheta[[x - 1L]][, 1:3]) + theta[x - 1L, 4:6])
   })))
 
@@ -569,9 +569,9 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NUL
   dD[, , 2] <- t(tmp) - tmp
   tmp <- temp * P[, 3]
   dD[, , 3] <- t(tmp) - tmp
-  dL[, 1:3] <- t(sapply(2:dim(index)[1], FUN = function(x) {
+  dL[, 1:3] <- t(sapply2(2:dim(index)[1], FUN = function(x) {
     idxs <- index[x, 1]:index[x, 2]
-    rowSums(sapply(idxs, FUN = function(i) colSums(dDtotheta(P0[i, -1], b = t(t(P[-idxs, ]) - theta[x - 1, 4:6]), temp = matheta[[x - 1]]) * temp[-idxs, i])))
+    rowSums(sapply2(idxs, FUN = function(i) colSums(dDtotheta(P0[i, -1], b = t(t(P[-idxs, ]) - theta[x - 1, 4:6]), temp = matheta[[x - 1]]) * temp[-idxs, i])))
   }))
   index_rn1 <- index[-1, ]
   dL[, 4] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {

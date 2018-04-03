@@ -97,7 +97,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       if (is.numeric(lscov[[c]])) {
         gldata[[c]] <- temp[upper.tri(temp)]
       } else {
-        gldata[[c]] <- cbind(temp[upper.tri(temp)], sapply(lscov[[c]], FUN = function(x) log(x[upper.tri(x)])))
+        gldata[[c]] <- cbind(temp[upper.tri(temp)], sapply2(lscov[[c]], FUN = function(x) log(x[upper.tri(x)])))
       }
       gldata[[c]] <- data.frame(gldata[[c]])
       colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
@@ -205,13 +205,13 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     fHMC <- HMC
     fknt <- kinetic
     e_c <- 0.02
-    eps_coarse <- ifelse(min(sapply(lsmap0, FUN = function(x) sum(x[, -(1:2)] > 0) / dim(x)[1] / dim(x)[1])) < 0.15, 0.005, e_c)
+    eps_coarse <- ifelse(min(sapply2(lsmap0, FUN = function(x) sum(x[, -(1:2)] > 0) / dim(x)[1] / dim(x)[1])) < 0.15, 0.005, e_c)
     num_coarse <- min(50, floor(Maxiter / 4))
   } else {
     fHMC <- HMC1
     fknt <- kinetic_1
     e_c <- 0.01
-    eps_coarse <- ifelse(min(sapply(lsmap0, FUN = function(x) sum(x[, -(1:2)] > 0) / dim(x)[1] / dim(x)[1])) < 0.15, 0.005, min(e_c, 10 * epslon))
+    eps_coarse <- ifelse(min(sapply2(lsmap0, FUN = function(x) sum(x[, -(1:2)] > 0) / dim(x)[1] / dim(x)[1])) < 0.15, 0.005, min(e_c, 10 * epslon))
     num_coarse <- min(20, floor(Maxiter / 4))
   }
   while (iternum < Maxiter) {
@@ -327,7 +327,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       }
     }
     Pf <- avsmth(pbin, P = P)
-    beta2 <- sapply(Beta, FUN = function(x) x[length(x)])
+    beta2 <- sapply2(Beta, FUN = function(x) x[length(x)])
     if (N < 1000) {
       tmp_opt <- optim(c(1, beta1), fn = function(x) -floglike(cbind(pbin, x[1] * Pf), A, b, invSigma, x[-1], covmat0, mat, pos, v, mak))
       sLoglike <- -tmp_opt[["value"]]

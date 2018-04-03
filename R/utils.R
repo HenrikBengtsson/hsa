@@ -66,6 +66,28 @@ rbind <- local({
   function(...) base_rbind(..., deparse.level = 0L)
 })
 
+## PERFORMANCE: Remove all unnecessary overhead from sapply()
+sapply2 <- function(X, FUN, ...) {
+  names(X) <- NULL
+  x <- lapply(X = X, FUN = FUN, ...)
+  n <- length(x) 
+  if (n == 0L) return(x)
+  
+  ns <- lengths(x, use.names = FALSE)
+  common.len <- unique(ns)
+  if (length(common.len) > 1L) return(x)
+
+  if (common.len == 0L) return(x)
+  
+  r <- unlist(x, recursive = FALSE, use.names = FALSE)
+  if (common.len == 1L) return(r)
+
+  d <- c(common.len, n)
+  if (prod(d) != length(r)) return(x)
+  
+  dim(r) <- d
+  r
+}
 
 ## AD HOC: Trick cstruct1.R code to write files with 12 digits
 ## (still plenty) instead of 15 digits for easier 'diff' comparisons
