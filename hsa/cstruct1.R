@@ -213,11 +213,11 @@ tranS <- local({
     beta <- ginv(tmp_t %*% tmp) %*% (tmp_t %*% S2)
     # beta=solve(t(tmp)%*%tmp,t(tmp)%*%S2)
     s <- svd(beta[-1, ])
-    beta[-1, ] <- s$u %*% (diag(sign(s$d))) %*% t(s$v)
+    tmp2 <- s$u %*% (diag(sign(s$d))) %*% t(s$v)
+    beta[-1, ] <- tmp2
     S <- tmp %*% beta
     if (I_scale) {
-                              ## HB: vvv - below part same as above - vvv
-      beta[-1, ] <- mean(abs(s$d)) * s$u %*% (diag(sign(s$d))) %*% t(s$v)
+      beta[-1, ] <- mean(abs(s$d)) * tmp2
       tmp <- optim(c(1, 0, 0, 0, 0, 0, 0), fn = function(x) {
         sum(sqrt(rowSums(
           (t(t(x[1] * S %*% angle2mat(x[2:4])) + x[5:7]) - S2)^2
