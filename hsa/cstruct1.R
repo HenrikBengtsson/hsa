@@ -131,7 +131,7 @@ fmkorder_temp <- function(m, A, b, sigma, S) {
     Sigma <- sigma
     return(as_matrix(cbind(mu, Sigma, A)))
   } else {
-    tmp <- Recall(m - 1, A, b, sigma, S)
+    tmp <- fmkorder_temp(m - 1, A, b, sigma, S)
     mu <- A %*% tmp[, 1] + b
     temp <- tmp[, -(1:4)] %*% A
     Sigma <- tmp[, 2:4] + (t(temp)) %*% sigma %*% (temp)
@@ -649,7 +649,7 @@ Leapfrog <- function(grad_U, L, epsilon, p0, q0, fM) {
     q <- (q0 + epsilon * (fM(p0)))
     p <- p0 - epsilon * grad_U(q) / 2
   } else {
-    temp <- Recall(grad_U, L - 1, epsilon, p0, q0, fM)
+    temp <- Leapfrog(grad_U, L - 1, epsilon, p0, q0, fM)
     # q=temp[[2]]+epsilon*(temp[[1]])
     q <- (temp[[2]] + epsilon * (fM(temp[[1]])))
     p <- temp[[1]] - epsilon * grad_U(temp[[2]]) / 2
@@ -768,7 +768,7 @@ Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
     return(rbind(q0, t(Padd$par)))
   } else {
     # cat(pbin,"\n")
-    temp <- Recall(N - 1, pbin, A, b, invSigma, beta, cx, mat, q0, fL)
+    temp <- Qsis(N - 1, pbin, A, b, invSigma, beta, cx, mat, q0, fL)
     pbin_t <- pbin[1:N]
     cx_t <- cx[1:N, 1:N, ]
     mat_t <- mat[1:N, 1:(N + 1L), ]
@@ -795,7 +795,7 @@ Sis <- function(d, pbin, A, b, invSigma, beta, cx0, mat0, q0, fL) {
     return(as_matrix(Qsis(d, pbin, A, b, invSigma, beta, cx, mat, q0, fL)))
   } else {
     # cat(c(length(pbin[-N]),dim(mat[-N,-(N+1),])),"\n")
-    temp <- Recall(d, pbin[-N], A, b, invSigma, beta, cx[-N, -N, ], mat[-N, -(N + 1L), ], q0, fL)
+    temp <- Sis(d, pbin[-N], A, b, invSigma, beta, cx[-N, -N, ], mat[-N, -(N + 1L), ], q0, fL)
     # cat(dim(temp),"\n")
     idxs <- (N - d):N
     pbin_t <- pbin[idxs]

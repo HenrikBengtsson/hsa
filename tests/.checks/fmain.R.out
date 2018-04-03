@@ -421,11 +421,11 @@ other attached packages:
 [1] MASS_7.3-49
 
 loaded via a namespace (and not attached):
-[1] compiler_3.4.4          tools_3.4.4             inline_0.3.14           methods_3.4.4          
-[5] matrixStats_0.53.1-9000
+[1] compiler_3.4.4          tools_3.4.4             inline_0.3.14          
+[4] methods_3.4.4           matrixStats_0.53.1-9000
 
 Processing time:
    user  system elapsed 
-218.552   0.160 218.656 
+215.936   0.220 216.225 
 
 Validation:
