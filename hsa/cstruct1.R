@@ -26,6 +26,40 @@ sumprod <- inline::cfunction(sig = methods::signature(x = "numeric", y = "numeri
   return ScalarReal(s);
 ')
 
+##     T <- -C * D ^ beta
+negCDbeta <- inline::cfunction(sig = methods::signature(C = "numeric", D = "numeric", beta = "numeric"), language = "C", body = '
+  SEXP res;
+
+  double *c = REAL(C);
+  double *d = REAL(D);
+  double b = REAL(beta)[0];
+
+  SEXP dim = getAttrib(C, R_DimSymbol);
+  int nrow = INTEGER(dim)[0];
+  int ncol = INTEGER(dim)[1];
+
+  dim = getAttrib(D, R_DimSymbol);
+  if (INTEGER(dim)[0] != nrow)
+    error("Argument \'C\' and \'D\' have different number of rows");
+  if (INTEGER(dim)[1] != ncol)
+    error("Argument \'C\' and \'D\' have different number of columns");
+
+  PROTECT(res = allocMatrix(REALSXP, nrow, ncol));
+  double *y = REAL(res);
+
+  R_xlen_t ii = 0;
+  for (int cc = 0; cc < ncol; ++cc) {
+    for (int rr = 0; rr < nrow; ++rr) {
+      y[ii] = - c[ii] * pow(d[ii], b);
+      ii++;
+    }
+  }
+
+  UNPROTECT(1);
+  return res;
+')
+
+
 ## PERFORMANCE: dist_matrix(x) is a faster version of as.matrix(dist(x)),
 ## because it avoids the overhead from S3 method dispatching, handling of
 ## non-needed attributes etc.  Moreover, dist_matrix(x, square = TRUE) is
@@ -311,14 +345,18 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
     pos_i <- pos[[i]]
     v_i <- v[[i]]
     beta_i <- beta[i]
+    
     distmat_i <- distmat[pos_i, pos_i]
     cx_i <- cx[pos_i, pos_i, i]
     ## HB: The following calculation is one of the most expensive ones
     ##     in the whole program. /HB 2018-04-02
-    temp <- -cx_i * distmat_i^beta_i
+#    temp <- -cx_i * distmat_i^beta_i
+    temp <- negCDbeta(C = cx_i, D = distmat_i, beta = beta_i)
     temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1L, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx_i[v_i]))
     ## sum2(..., idxs)?
-    L <- L + sum(temp[upper.tri(temp)]) / (3 * N) # +sum(temp[lower.tri(temp))
+    L_i <- sum(temp[upper.tri(temp)]) / (3 * N) # +sum(temp[lower.tri(temp))
+    
+    L <- L + L_i
   }
   L
 }
@@ -341,7 +379,7 @@ dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, ma
     v_i <- v[[i]]
     beta_i <- beta[i]
     distmat_i <- distmat[pos_i, pos_i]
-    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta_i * cx[pos_i, pos_i, i] * (distmat_i^(beta_i / 2 - 1))
+    temp[pos_i, pos_i] <- temp[pos_i, pos_i] + beta_i * negCDbeta(C = cx[pos_i, pos_i, i], D = distmat_i, beta = beta_i / 2 - 1)
     temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta_i * mat[pos_i, pos_i + 1L, i][v_i] / distmat_i[v_i]
     # temp[pos[[i]],pos[[i]]]=temp[pos[[i]],pos[[i]]]-beta[i]*cx[pos[[i]],pos[[i]],i]*(distmat[pos[[i]],pos[[i]]]^(beta[i]/2-1))+beta[i]*mat[pos[[i]],pos[[i]]+1,i]/distmat[pos[[i]],pos[[i]]]
   }
@@ -380,14 +418,18 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
     pos_i <- pos[[i]]
     v_i <- v[[i]]
     beta_i <- beta[i]
+    
     distmat_i <- distmat[pos_i, pos_i]
     cx_i <- cx[pos_i, pos_i, i]
     ## HB: The following calculation is one of the most expensive ones
     ##     in the whole program. /HB 2018-04-02
-    temp <- -cx_i * distmat_i^beta_i
+#    temp <- -cx_i * distmat_i^beta_i
+    temp <- negCDbeta(C = cx_i, D = distmat_i, beta = beta_i)
     temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1L, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx_i[v_i]))
     ## sum2(..., idxs)?
-    L <- L + sum(temp[upper.tri(temp)]) / (3 * N)
+    L_i <- sum(temp[upper.tri(temp)]) / (3 * N)
+    
+    L <- L + L_i
     # temp=-cx[pos[[i]],pos[[i]],i]*distmat[pos[[i]],pos[[i]]]^beta[i]/N/3+mat[pos[[i]],pos[[i]]+1,i]*(beta[i]*log(distmat[pos[[i]],pos[[i]]])+log(cx[pos[[i]],pos[[i]],i]))/N/3
     # L=L+sum(temp[upper.tri(temp)])# +sum(temp[lower.tri(temp))
   }
@@ -431,7 +473,7 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
     v_i <- v[[i]]
     beta_i <- beta[i]
     distmat_i <- distmat[pos_i, pos_i]
-    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta_i * cx[pos_i, pos_i, i] * (distmat_i^(beta_i / 2 - 1))
+    temp[pos_i, pos_i] <- temp[pos_i, pos_i] + beta_i * negCDbeta(C = cx[pos_i, pos_i, i], D = distmat_i, beta = beta_i / 2 - 1)
     temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta_i * mat[pos_i, pos_i + 1L, i][v_i] / distmat_i[v_i]
     # temp[pos[[i]],pos[[i]]]=temp[pos[[i]],pos[[i]]]-beta[i]*cx[pos[[i]],pos[[i]],i]*(distmat[pos[[i]],pos[[i]]]^(beta[i]/2-1))+beta[i]*mat[pos[[i]],pos[[i]]+1,i]/distmat[pos[[i]],pos[[i]]]
   }
@@ -526,7 +568,7 @@ dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL
     v_i <- v[[i]]
     beta_i <- beta[i]
     distmat_i <- distmat[pos_i, pos_i]
-    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta_i * cx[pos_i, pos_i, i] * (distmat_i^(beta_i / 2 - 1))
+    temp[pos_i, pos_i] <- temp[pos_i, pos_i] + beta_i * negCDbeta(C = cx[pos_i, pos_i, i], D = distmat_i, beta = beta_i / 2 - 1)
     temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta_i * mat[pos_i, pos_i + 1L, i][v_i] / distmat_i[v_i]
     # temp[pos[[i]],pos[[i]]]=temp[pos[[i]],pos[[i]]]-beta[i]*cx[pos[[i]],pos[[i]],i]*(distmat[pos[[i]],pos[[i]]]^(beta[i]/2-1))+beta[i]*mat[pos[[i]],pos[[i]]+1,i]/distmat[pos[[i]],pos[[i]]]
   }
@@ -652,7 +694,7 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NUL
     v_i <- v[[i]]
     beta_i <- beta[i]
     distmat_i <- distmat[pos_i, pos_i]
-    temp[pos_i, pos_i] <- temp[pos_i, pos_i] - beta_i * cx[pos_i, pos_i, i] * (distmat_i^(beta_i / 2 - 1))
+    temp[pos_i, pos_i] <- temp[pos_i, pos_i] + beta_i * negCDbeta(C = cx[pos_i, pos_i, i], D = distmat_i, beta = beta_i / 2 - 1)
     temp[pos_i, pos_i][v_i] <- temp[pos_i, pos_i][v_i] + beta_i * mat[pos_i, pos_i + 1L, i][v_i] / distmat_i[v_i]
     # temp[pos[[i]],pos[[i]]]=temp[pos[[i]],pos[[i]]]-beta[i]*cx[pos[[i]],pos[[i]],i]*(distmat[pos[[i]],pos[[i]]]^(beta[i]/2-1))+beta[i]*mat[pos[[i]],pos[[i]]+1,i]/distmat[pos[[i]],pos[[i]]]
   }
