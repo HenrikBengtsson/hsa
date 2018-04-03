@@ -44,6 +44,12 @@ as_matrix <- function(x) {
   stop("Not a matrix: ", as.character(substitute(x)))
 }
 
+## PERFORMANCE: Avoid overhead from S3 dispatch on solve()
+solve <- function(a, b = NULL) {
+  if (is.null(b)) b <- diag(1, nrow = nrow(a))
+  solve.default(a, b)
+}
+
 ## PERFORMANCE: Avoid overhead from setting dimnames in cbind() and rbind()
 cbind <- local({
   base_cbind <- base::cbind
