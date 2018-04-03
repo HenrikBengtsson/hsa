@@ -5,14 +5,26 @@ library(MASS)
 colSds <- matrixStats::colSds
 
 ## sumsq(x) is a faster version of sum(x^2)
-sumsq <- inline::cfunction(sig = methods::signature(x = "numeric"), language = "C", body = "
+sumsq <- inline::cfunction(sig = methods::signature(x = "numeric"), language = "C", body = '
   SEXP res;
   R_xlen_t n = xlength(x);
   double *xx = REAL(x);
-  double y = 0;
-  for (R_xlen_t ii = 0; ii < n; ++ii) y += xx[ii] * xx[ii];
-  return ScalarReal(y);
-")
+  double s = 0;
+  for (R_xlen_t ii = 0; ii < n; ++ii) s += xx[ii] * xx[ii];
+  return ScalarReal(s);
+')
+
+## sumprod(x, y) is a faster version of sum(x * y)
+sumprod <- inline::cfunction(sig = methods::signature(x = "numeric", y = "numeric"), language = "C", body = '
+  SEXP res;
+  R_xlen_t n = xlength(x);
+  double *xx = REAL(x);
+  double *yy = REAL(y);
+  double s = 0;
+  if (xlength(y) != n) error("Argument \'x\' and \'y\' are of different lengths");
+  for (R_xlen_t ii = 0; ii < n; ++ii) s += xx[ii] * yy[ii];
+  return ScalarReal(s);
+')
 
 ## PERFORMANCE: Avoid the overhead from using as.matrix.dist(), e.g.
 ## the handling of labels and dimnames are not needed.
@@ -58,11 +70,11 @@ kinetic0_1 <- function(p0) {
 }
 
 kinetic <- function(p0, N, rho) {
-  (sumsq(p0) - sum(p0[-1, ] * p0[-N, ]) * rho * 2) / N
+  (sumsq(p0) - sumprod(p0[-1, ], p0[-N, ]) * rho * 2) / N
 }
 
 kinetic_1 <- function(p0, N, rho) {
-  sumsq(p0) - sum(p0[-1, ] * p0[-N, ]) * rho * 2
+  sumsq(p0) - sumprod(p0[-1, ], p0[-N, ]) * rho * 2
 }
 
 momentum <- local({
@@ -128,12 +140,12 @@ fnormvec <- function(a, b) {
 }
 
 fangle <- function(a, b) {
-  acos(sum(a * b) / sqrt(sumsq(a) * sumsq(b)))
+  acos(sumprod(a, b) / sqrt(sumsq(a) * sumsq(b)))
 }
 
 frotanyvec <- function(x, v, theta) {
   n <- v / sqrt(sumsq(v))
-  t <- sum(x * n) * n
+  t <- sumprod(x, n) * n
   cos(theta) * (x - t) + sin(theta) * fnormvec(n, x) + t
 }
 
