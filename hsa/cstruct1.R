@@ -570,21 +570,24 @@ dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL
   dL
 }
 
-rotamat <- function(theta) {
-  temp <- matrix(0, nrow = 3L, ncol = 5L)
-  temp[, 4:5] <- matrix(c(sin(theta[1:3]), cos(theta[1:3])), nrow = 3L, ncol = 2L)
-  temp[, 1:3] <- matrix(c(
-    temp[1, 5] * temp[3, 5] - temp[2, 5] * temp[1, 4] * temp[3, 4],
-    -temp[2, 5] * temp[3, 5] * temp[1, 4] - temp[1, 5] * temp[3, 4],
-    temp[1, 4] * temp[2, 4],
-    temp[3, 5] * temp[1, 4] + temp[1, 5] * temp[2, 5] * temp[3, 4],
-    temp[1, 5] * temp[2, 5] * temp[3, 5] - temp[1, 4] * temp[3, 4],
-    -temp[1, 5] * temp[2, 4],
-    temp[2, 4] * temp[3, 4],
-    temp[3, 5] * temp[2, 4],
-    temp[2, 5]
+rotamat <- function(theta, full = TRUE) {
+  sin_theta <- sin(theta)
+  cos_theta <- cos(theta)
+  R <- matrix(c(
+    cos_theta[1] * cos_theta[3] - cos_theta[2] * sin_theta[1] * sin_theta[3],
+   -cos_theta[2] * cos_theta[3] * sin_theta[1] - cos_theta[1] * sin_theta[3],
+    sin_theta[1] * sin_theta[2],
+    cos_theta[3] * sin_theta[1] + cos_theta[1] * cos_theta[2] * sin_theta[3],
+    cos_theta[1] * cos_theta[2] * cos_theta[3] - sin_theta[1] * sin_theta[3],
+   -cos_theta[1] * sin_theta[2],
+    sin_theta[2] * sin_theta[3],
+    cos_theta[3] * sin_theta[2],
+    cos_theta[2]
   ), nrow = 3L, ncol = 3L)
-  temp
+  
+  if (full) R <- cbind(R, sin_theta, cos_theta)
+
+  R
 }
 
 dDtotheta <- function(p, b, temp) {
@@ -622,7 +625,7 @@ dDtotheta <- function(p, b, temp) {
 }
 
 dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
-  matheta <- lapply(2:dim(index)[1], FUN = function(x) rotamat(theta[x - 1, ]))
+  matheta <- lapply(2:dim(index)[1], FUN = function(x) rotamat(theta[x - 1L, ]))
   P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, args = sapply(2:dim(index)[1], FUN = function(x) {
     t(t(P0[index[x, 1]:index[x, 2], -1] %*% matheta[[x - 1L]][, 1:3]) + theta[x - 1L, 4:6])
   })))
@@ -675,7 +678,7 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NUL
 }
 
 angle2mat <- function(theta) {
-  rotamat(theta)[, 1:3]
+  rotamat(theta, full = FALSE)
 }
 
 v2mat <- function(theta) {
