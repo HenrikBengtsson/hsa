@@ -4,6 +4,16 @@
 library(MASS)
 colSds <- matrixStats::colSds
 
+## sumsq(x) is a faster version of sum(x^2)
+sumsq <- inline::cfunction(sig = methods::signature(x = "numeric"), language = "C", body = "
+  SEXP res;
+  R_xlen_t n = xlength(x);
+  double *xx = REAL(x);
+  double y = 0;
+  for (R_xlen_t ii = 0; ii < n; ++ii) y += xx[ii] * xx[ii];
+  return ScalarReal(y);
+")
+
 ## PERFORMANCE: Avoid the overhead from using as.matrix.dist(), e.g.
 ## the handling of labels and dimnames are not needed.
 as_matrix.dist <- function (x, ...) {
@@ -40,19 +50,19 @@ normP <- function(P) {
 }
 
 kinetic0 <- function(p0) {
-  sum(p0^2) / dim(p0)[1]
+  sumsq(p0) / dim(p0)[1]
 }
 
 kinetic0_1 <- function(p0) {
-  sum(p0^2)
+  sumsq(p0)
 }
 
 kinetic <- function(p0, N, rho) {
-  (sum(p0^2) - sum(p0[-1, ] * p0[-N, ]) * rho * 2) / N
+  (sumsq(p0) - sum(p0[-1, ] * p0[-N, ]) * rho * 2) / N
 }
 
 kinetic_1 <- function(p0, N, rho) {
-  sum(p0^2) - sum(p0[-1, ] * p0[-N, ]) * rho * 2
+  sumsq(p0) - sum(p0[-1, ] * p0[-N, ]) * rho * 2
 }
 
 momentum <- local({
@@ -118,11 +128,11 @@ fnormvec <- function(a, b) {
 }
 
 fangle <- function(a, b) {
-  acos(sum(a * b) / sqrt(sum(a^2) * sum(b^2)))
+  acos(sum(a * b) / sqrt(sumsq(a) * sumsq(b)))
 }
 
 frotanyvec <- function(x, v, theta) {
-  n <- v / sqrt(sum(v^2))
+  n <- v / sqrt(sumsq(v))
   t <- sum(x * n) * n
   cos(theta) * (x - t) + sin(theta) * fnormvec(n, x) + t
 }
@@ -146,7 +156,7 @@ fbead <- function(S1, S2) {
 fmirror <- function(v) {
   y <- diag(3)
   if (any(v)) {
-    y <- diag(3) - v %*% t(v) / sum(v^2)
+    y <- diag(3) - v %*% t(v) / sumsq(v)
   }
   y
 }
