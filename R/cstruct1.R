@@ -23,7 +23,7 @@ kinetic_1 <- function(p0, N, rho) {
 }
 
 momentum <- local({
-  zeros_3 <- rep(0, times = 3)
+  zeros_3 <- rep(0, times = 3L)
   function(p0, N, rho) {
     p0 - rbind(p0[-1, ] * rho, zeros_3) - rbind(zeros_3, p0[-N, ] * rho)
   }
@@ -64,9 +64,9 @@ fmkorder_temp <- function(m, A, b, sigma, S) {
     Sigma <- sigma
   } else {
     tmp <- fmkorder_temp(m - 1, A, b, sigma, S)
-    mu <- A %*% tmp$mu + b
-    temp <- tmp$A %*% A
-    Sigma <- tmp$Sigma + t(temp) %*% sigma %*% temp
+    mu <- A %*% tmp[["mu"]] + b
+    temp <- tmp[["A"]] %*% A
+    Sigma <- tmp[["Sigma"]] + t(temp) %*% sigma %*% temp
     A <- temp
   }
   list(mu = mu, Sigma = Sigma, A = A)
@@ -74,15 +74,15 @@ fmkorder_temp <- function(m, A, b, sigma, S) {
 
 fmkorder <- function(m, A, b, sigma, S) {
   temp <- fmkorder_temp(m, A, b, sigma, S)
-  Sigma <- temp$Sigma
+  Sigma <- temp[["Sigma"]]
   Sigma <- solve(Sigma)
-  temp$mu <- c(temp$mu)
-  temp$Sigma <- Sigma
+  temp[["mu"]] <- c(temp[["mu"]])
+  temp[["Sigma"]] <- Sigma
   temp
 }
 
 fmkorder2 <- local({
-  zeros_3 <- rep(0, times = 3)
+  zeros_3 <- rep(0, times = 3L)
   function(m, A, b, sigma) fmkorder(m, A, b, sigma, S = zeros_3)
 })
 
@@ -131,23 +131,23 @@ fmirror <- local({
 #' @importFrom stats optim
 #' @importFrom MASS ginv
 tranS <- local({
-  zeros_9 <- rep(0, times = 9)
+  zeros_9 <- rep(0, times = 9L)
   function(S1, S2, I_scale = TRUE) {
     tmp <- cbind(1, S1)
     tmp_t <- t(tmp)
     beta <- ginv(tmp_t %*% tmp) %*% (tmp_t %*% S2)
     s <- svd(beta[-1, ])
-    tmp2 <- s$u %*% (diag(sign(s$d))) %*% t(s$v)
+    tmp2 <- s[["u"]] %*% (diag(sign(s[["d"]]))) %*% t(s[["v"]])
     beta[-1, ] <- tmp2
     S <- tmp %*% beta
     if (I_scale) {
-      beta[-1, ] <- mean(abs(s$d)) * tmp2
+      beta[-1, ] <- mean(abs(s[["d"]])) * tmp2
       tmp <- optim(c(1, 0, 0, 0, 0, 0, 0), fn = function(x) {
         sum(sqrt(rowSums(
           (t(t(x[1] * S %*% angle2mat(x[2:4])) + x[5:7]) - S2)^2
         )))
       })
-      tmp <- tmp$par
+       tmp <- tmp[["par"]]
       S <- t(t(tmp[1] * S %*% angle2mat(tmp[2:4])) + tmp[5:7])
     } else {
       tmp <- optim(zeros_9, fn = function(x) {
@@ -155,7 +155,7 @@ tranS <- local({
           (t(t(S %*% angle2mat(x[4:6]) %*% fmirror(x[1:3])) + x[7:9]) - S2)^2
         )))
       })
-      tmp <- tmp$par
+      tmp <- tmp[["par"]]
       S <- t(t(S %*% angle2mat(tmp[4:6]) %*% fmirror(tmp[1:3])) + tmp[7:9])
     }
     S
@@ -312,16 +312,16 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
   if (is.null(mak)) {
     L <- L + sum(sapply(2:N, FUN = function(ii) {
       nmp <- fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
-      R_ii <- P[ii, ] - nmp$mu
-      Sigma <- nmp$Sigma
+      R_ii <- P[ii, ] - nmp[["mu"]]
+      Sigma <- nmp[["Sigma"]]
       -R_ii %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
     })) / (3 * N)
   } else {
     L <- L + sum(sapply(2:N, FUN = function(ii) {
       mak_ii1 <- mak[[ii - 1L]]
-      mu <- mak_ii1$mu
-      Sigma <- mak_ii1$Sigma
-      A <- mak_ii1$A
+      mu <- mak_ii1[["mu"]]
+      Sigma <- mak_ii1[["Sigma"]]
+      A <- mak_ii1[["A"]]
       mu <- mu + A %*% P[ii - 1L, ]
       R_ii <- P[ii, ] - mu
       -t(R_ii) %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
@@ -365,17 +365,17 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
     
     temp1 <- sapply(2:N, FUN = function(ii) {
       nmp_iim1 <- nmp[[ii - 1L]]
-      mu <- nmp_iim1$mu
-      Sigma <- nmp_iim1$Sigma
+      mu <- nmp_iim1[["mu"]]
+      Sigma <- nmp_iim1[["Sigma"]]
       -t(P[ii, ] - mu) %*% Sigma
     }) / (3 * N)
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
     
     temp2 <- sapply(1:(N - 1L), FUN = function(ii) {
       nmp_ii <- nmp[[ii]]
-      mu <- nmp_ii$mu
-      Sigma <- nmp_ii$Sigma
-      A <- nmp_ii$A
+      mu <- nmp_ii[["mu"]]
+      Sigma <- nmp_ii[["Sigma"]]
+      A <- nmp_ii[["A"]]
       T <- A %*% P[ii, ]
       U <- t(A) %*% Sigma
       -U %*% T - U %*% (mu - T - P[ii + 1L, ])
@@ -384,18 +384,18 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
   } else {
     temp1 <- sapply(2:N, FUN = function(ii) {
       mak_ii1 <- mak[[ii - 1L]]
-      mu <- mak_ii1$mu
-      Sigma <- mak_ii1$Sigma
-      A <- mak_ii1$A
+      mu <- mak_ii1[["mu"]]
+      Sigma <- mak_ii1[["Sigma"]]
+      A <- mak_ii1[["A"]]
       mu <- mu + A %*% P[ii - 1L, ]
       -t(P[ii, ] - mu) %*% Sigma
     }) / (3 * N)
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
     temp2 <- sapply(1:(N - 1L), FUN = function(ii) {
       mak_ii <- mak[[ii]]
-      mu <- mak_ii$mu
-      Sigma <- mak_ii$Sigma
-      A <- mak_ii$A
+      mu <- mak_ii[["mu"]]
+      Sigma <- mak_ii[["Sigma"]]
+      A <- mak_ii[["A"]]
       U <- t(A) %*% Sigma
       -U %*% A %*% P[ii, ] - U %*% (mu - P[ii + 1L, ])
     }) / (3 * N)
@@ -415,8 +415,8 @@ mkcloglikelihood <- function(theta, P0) {
   sigma <- solve(invSigma)
   temp <- sapply(2:N, FUN = function(ii) {
     nmp <- fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
-    R_ii <- P[ii, ] - nmp$mu
-    Sigma <- nmp$Sigma
+    R_ii <- P[ii, ] - nmp[["mu"]]
+    Sigma <- nmp[["Sigma"]]
     -R_ii %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
   })
   mean(temp) / 3
@@ -711,7 +711,7 @@ Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
     Padd <- optim(b + rnorm(3, sd = 1 / 5) + q0, fn = function(q) {
       fL(cbind(pbin_t, rbind(q0, q)), A, b, invSigma, beta, cx_t, mat_t)
     })
-    return(rbind(q0, t(Padd$par)))
+    return(rbind(q0, t(Padd[["par"]])))
   } else {
     temp <- Qsis(N - 1, pbin, A, b, invSigma, beta, cx, mat, q0, fL)
     pbin_t <- pbin[1:N]
@@ -720,7 +720,7 @@ Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
     Padd <- optim(rnorm(3, sd = 1 / 5) + A %*% temp[dim(temp)[1], ] + b, fn = function(q) {
       fL(cbind(pbin_t, rbind(temp, q)), A, b, invSigma, beta, cx_t, mat_t)
     })
-    return(rbind(temp, t(Padd$par)))
+    return(rbind(temp, t(Padd[["par"]])))
   }
 }
 
@@ -747,7 +747,7 @@ Sis <- function(d, pbin, A, b, invSigma, beta, cx0, mat0, q0, fL) {
     addq <- optim(rnorm(3, sd = 1 / 5) + A %*% temp[nrow, ] + b, fn = function(x) {
       fL(cbind(pbin_t, rbind(temp_t, x)), A, b, invSigma, beta, cx_t, mat_t)
     })
-    addq <- addq$par
+    addq <- addq[["par"]]
     return(rbind(temp, t(addq)))
   }
 }
@@ -848,7 +848,7 @@ finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdlo
       theta <- optim(as.vector(rbind(diag(3), P[index[i - 1, 2], ] - P[index_ri_c1, ] + rnorm(3, sd = 1 / 100))), fn = function(x) {
         piece(x, P_i, lP_i, pbin_i, A0, b0, invSigma0, beta1, covmat0_i, mat_i, floglike)
       })
-      theta <- matrix(theta$par, nrow = 4L, ncol = 3L)
+      theta <- matrix(theta[["par"]], nrow = 4L, ncol = 3L)
       P[index_ri_c1:index_ri_c2, ] <- lP_i %*% theta[-4, ] + rep(1, times = index_ri_c2 - index_ri_c1 + 1L) %*% t(theta[4, ])
     }
   }

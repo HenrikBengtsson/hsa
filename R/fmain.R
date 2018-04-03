@@ -73,7 +73,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       gldata[[c]][, dim(gldata[[c]])[2]] <- log(dmat1)
       colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
-      Beta[[c]] <- as.vector(betaest$coefficients)
+      Beta[[c]] <- as.vector(betaest[["coefficients"]])
       cat(Beta[[c]], "\n")
       beta1[c] <- min(-abs(Beta[[c]][length(Beta[[c]])]), beta1[c])
       covmat0[, , c] <- covmat0[, , c] * exp(Beta[[c]][1])
@@ -103,7 +103,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
       gldata[[c]] <- cbind(gldata[[c]], rep(1, times = dim(gldata[[c]])[1]))
-      Beta[[c]] <- c(as.vector(betaest$coefficients), beta1[c])
+      Beta[[c]] <- c(as.vector(betaest[["coefficients"]]), beta1[c])
       cat(Beta[[c]], "\n")
       covmat0[, , c] <- covmat0[, , c] * exp(Beta[[c]][1])
       if (!is.numeric(lscov[[c]])) {
@@ -129,7 +129,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       gldata[[c]][, dim(gldata[[c]])[2]] <- log(dmat1)
       colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
-      Beta[[c]] <- as.vector(betaest$coefficients)
+      Beta[[c]] <- as.vector(betaest[["coefficients"]])
       cat(Beta[[c]], "\n")
       beta1[c] <- min(-abs(Beta[[c]][length(Beta[[c]])]), beta1[c])
       covmat0[, , c] <- covmat0[, , c] * exp(Beta[[c]][1])
@@ -244,7 +244,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     if (mkfix && iternum >= 5) {
       P0 <- cbind(pbin, P)
       thetam <- optim(c(as.vector(A0), b0, as.vector(invSigma0[upper.tri(invSigma0, diag = TRUE)])), fn = function(theta) -mkcloglikelihood(theta, P0 = P0))
-      thetam <- thetam$par
+      thetam <- thetam[["par"]]
 
       A <- matrix(thetam[1:9], nrow = 3L, ncol = 3L)
       b <- thetam[10:12]
@@ -269,7 +269,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       gldata[[c]][, dim(gldata[[c]])[2]] <- log(dmat1)
       colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
-      Beta[[c]] <- as.vector(betaest$coefficients)
+      Beta[[c]] <- as.vector(betaest[["coefficients"]])
       cat(iternum, ": ", Beta[[c]], "\n")
       beta1[c] <- ifelse(iternum <= 5, min(-abs(Beta[[c]][length(Beta[[c]])]), -1.3), min(-abs(Beta[[c]][length(Beta[[c]])]), -0.6))
       covmat0[, , c] <- covmat0[, , c] * exp(Beta[[c]][1])
@@ -317,11 +317,11 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     Loglike <- usLoglike
     if (any(Pf != P)) {
       tmp_opt <- optim(c(1, beta1), fn = function(x) -floglike(cbind(pbin, x[1] * Pf), A, b, invSigma, x[-1], covmat0, mat, pos, v, mak))
-      sLoglike <- -tmp_opt$value
-      cat("LLK before and after outlier removal:", c(usLoglike, sLoglike), "(", tmp_opt$par, ")", "\n")
+      sLoglike <- -tmp_opt[["value"]]
+      cat("LLK before and after outlier removal:", c(usLoglike, sLoglike), "(", tmp_opt[["par"]], ")", "\n")
       if (usLoglike <= sLoglike) {
         Loglike <- sLoglike
-        beta1 <- tmp_opt$par
+        beta1 <- tmp_opt[["par"]]
         P <- beta1[1] * matrix(Pf, nrow = N, ncol = 3L)
         beta1 <- beta1[-1]
       }
@@ -330,11 +330,11 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     beta2 <- sapply(Beta, FUN = function(x) x[length(x)])
     if (N < 1000) {
       tmp_opt <- optim(c(1, beta1), fn = function(x) -floglike(cbind(pbin, x[1] * Pf), A, b, invSigma, x[-1], covmat0, mat, pos, v, mak))
-      sLoglike <- -tmp_opt$value
-      cat("LLK before and after smoothing:", c(Loglike, sLoglike), "(", tmp_opt$par, ")", "\n")
+      sLoglike <- -tmp_opt[["value"]]
+      cat("LLK before and after smoothing:", c(Loglike, sLoglike), "(", tmp_opt[["par"]], ")", "\n")
       if (!(Loglike > sLoglike || (any(beta2 > -1) && runif(1) < 0.5))) {
         Loglike <- sLoglike
-        beta1 <- tmp_opt$par
+        beta1 <- tmp_opt[["par"]]
         P <- beta1[1] * matrix(Pf, nrow = N, ncol = 3L)
         beta1 <- beta1[-1]
       }

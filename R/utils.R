@@ -34,8 +34,8 @@ log_det <- function(x) {
   z <- determinant.matrix(x, logarithm = TRUE)
 #  d <- c(z$sign * exp(z$modulus))
 #  log(d)
-  if (z$sign < 0) stop("Log-determinant: NaN")
-  c(z$modulus)
+  if (z[["sign"]] < 0) stop("Log-determinant: NaN")
+  c(z[["modulus"]])
 }
 
 ## PERFORMANCE: Avoid overhead from S3 dispatch on solve()
