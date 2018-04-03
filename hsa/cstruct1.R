@@ -80,8 +80,7 @@ rbind <- local({
 
 normP <- function(P) {
   P1 <- t(t(P) - colMeans(P))
-  P1 <- 5 * P1 / sqrt(max(rowSums(P1^2)))
-  P1
+  5 / sqrt(max(rowSums(P1^2))) * P1
 }
 
 kinetic0 <- function(p0) {
@@ -256,7 +255,7 @@ rmol <- function(loci, P) {
   d1 <- sqrt(rowSums((P1[-1, ] - P1[-n, ])^2))
   cutoff <- 10 * median(d1)
   if (any(d1 >= cutoff)) {
-    outlier <- d1 >= cutoff
+    outlier <- (d1 >= cutoff)
     v <- which(outlier)
     for (i in 1:length(v)) {
       v_i <- v[i]
@@ -314,7 +313,7 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
     temp <- -cx_i * distmat_i^beta_i
     temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1L, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx_i[v_i]))
     ## sum2(..., idxs)?
-    L <- L + sum(temp[upper.tri(temp)]) / N / 3 # +sum(temp[lower.tri(temp))
+    L <- L + sum(temp[upper.tri(temp)]) / (3 * N) # +sum(temp[lower.tri(temp))
   }
   L
 }
@@ -343,11 +342,11 @@ dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, ma
   }
   diag(temp) <- 0
   tmp <- temp * P[, 1]
-  dL[, 1] <- colSums(t(tmp) - tmp) / N / 3
+  dL[, 1] <- colSums(t(tmp) - tmp) / (3 * N)
   tmp <- temp * P[, 2]
-  dL[, 2] <- colSums(t(tmp) - tmp) / N / 3
+  dL[, 2] <- colSums(t(tmp) - tmp) / (3 * N)
   tmp <- temp * P[, 3]
-  dL[, 3] <- colSums(t(tmp) - tmp) / N / 3
+  dL[, 3] <- colSums(t(tmp) - tmp) / (3 * N)
   dL
 }
 
@@ -381,7 +380,7 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
     temp <- -cx_i * distmat_i^beta_i
     temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1L, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx_i[v_i]))
     ## sum2(..., idxs)?
-    L <- L + sum(temp[upper.tri(temp)]) / N / 3
+    L <- L + sum(temp[upper.tri(temp)]) / (3 * N)
     # temp=-cx[pos[[i]],pos[[i]],i]*distmat[pos[[i]],pos[[i]]]^beta[i]/N/3+mat[pos[[i]],pos[[i]]+1,i]*(beta[i]*log(distmat[pos[[i]],pos[[i]]])+log(cx[pos[[i]],pos[[i]],i]))/N/3
     # L=L+sum(temp[upper.tri(temp)])# +sum(temp[lower.tri(temp))
   }
@@ -391,7 +390,7 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
       R_ii <- P[ii, ] - nmp$mu
       Sigma <- nmp$Sigma
       -R_ii %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
-    }) / N / 3)
+    })) / (3 * N)
   } else {
     L <- L + sum(sapply(2:N, FUN = function(ii) {
       mak_ii1 <- mak[[ii - 1L]]
@@ -401,7 +400,7 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
       mu <- mu + A %*% P[ii - 1L, ]
       R_ii <- P[ii, ] - mu
       -t(R_ii) %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
-    })) / N / 3
+    })) / (3 * N)
   }
   L
 }
@@ -431,11 +430,11 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
   }
   diag(temp) <- 0
   tmp <- temp * P[, 1]
-  dL[, 1] <- colSums(t(tmp) - tmp) / N / 3
+  dL[, 1] <- colSums(t(tmp) - tmp) / (3 * N)
   tmp <- temp * P[, 2]
-  dL[, 2] <- colSums(t(tmp) - tmp) / N / 3
+  dL[, 2] <- colSums(t(tmp) - tmp) / (3 * N)
   tmp <- temp * P[, 3]
-  dL[, 3] <- colSums(t(tmp) - tmp) / N / 3
+  dL[, 3] <- colSums(t(tmp) - tmp) / (3 * N)
   if (is.null(mak)) {
     nmp <- lapply(2:N, FUN = function(ii) {
       fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
@@ -446,7 +445,7 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
       mu <- nmp_iim1$mu
       Sigma <- nmp_iim1$Sigma
       -t(P[ii, ] - mu) %*% Sigma
-    }) / N / 3
+    }) / (3 * N)
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
     
     temp2 <- sapply(1:(N - 1L), FUN = function(ii) {
@@ -456,7 +455,7 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
       A <- nmp_ii$A
       A_t <- t(A)
       -A_t %*% Sigma %*% A %*% P[ii, ] - A_t %*% Sigma %*% (mu - A %*% P[ii, ] - P[ii + 1L, ])
-    }) / N / 3
+    }) / (3 * N)
     dL[1:(N - 1L), ] <- dL[1:(N - 1L), ] + t(temp2)
   } else {
     temp1 <- sapply(2:N, FUN = function(ii) {
@@ -466,7 +465,7 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
       A <- mak_ii1$A
       mu <- mu + A %*% P[ii - 1L, ]
       -t(P[ii, ] - mu) %*% Sigma
-    }) / N / 3
+    }) / (3 * N)
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
     temp2 <- sapply(1:(N - 1L), FUN = function(ii) {
       mak_ii <- mak[[ii]]
@@ -475,7 +474,7 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
       A <- mak_ii$A
       A_t <- t(A)
       -A_t %*% Sigma %*% A %*% P[ii, ] - A_t %*% Sigma %*% (mu - P[ii + 1L, ])
-    }) / N / 3
+    }) / (3 * N)
     dL[1:(N - 1L), ] <- dL[1:(N - 1L), ] + t(temp2)
   }
   dL
@@ -539,7 +538,7 @@ dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL
     c(colSums(dD[-idxs, idxs, 1] %*% P0t),
       colSums(dD[-idxs, idxs, 2] %*% P0t),
       colSums(dD[-idxs, idxs, 3] %*% P0t))
-  })) / N / 3
+  })) / (3 * N)
   dL[, 1:9] <- tmp # t(apply(index[-1,],1,function(x) c(colSums(dD[-(x[1]:x[2]),x[1]:x[2],1]%*%P0[x[1]:x[2],-1]),colSums(dD[-(x[1]:x[2]),x[1]:x[2],2]%*%P0[x[1]:x[2],-1]),colSums(dD[-(x[1]:x[2]),x[1]:x[2],3]%*%P0[x[1]:x[2],-1]))))/N/3
 
   dL[, 1:9] <- dL[, 1:9] + t(apply(index_rn1, MARGIN = 1L, FUN = function(x) {
@@ -553,20 +552,20 @@ dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL
         sum(upper.tri(t(T_2)) - upper.tri(T_2)),
         sum(upper.tri(t(T_3)) - upper.tri(T_3)))
     })
-  })) / N / 3
+  })) / (3 * N)
   
   dL[, 10] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {
     idxs <- x[1]:x[2]
     sum(dD[-idxs, idxs, 1])
-  }) / N / 3
+  }) / (3 * N)
   dL[, 11] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {
     idxs <- x[1]:x[2]
     sum(dD[-idxs, idxs, 2])
-  }) / N / 3
+  }) / (3 * N)
   dL[, 12] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {
     idxs <- x[1]:x[2]
     sum(dD[-idxs, idxs, 3])
-  }) / N / 3
+  }) / (3 * N)
   dL
 }
 
@@ -674,7 +673,7 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NUL
     idxs <- x[1]:x[2]
     sum(dD[-idxs, idxs, 3])
   })
-  dL / N / 3
+  dL / (3 * N)
 }
 
 angle2mat <- function(theta) {
@@ -689,12 +688,12 @@ Leapfrog <- function(grad_U, L, epsilon, p0, q0, fM) {
   N <- dim(p0)[1]
   if (L < 2) {
     # q = (q0 + epsilon * p0)
-    q <- (q0 + epsilon * (fM(p0)))
+    q <- q0 + epsilon * fM(p0)
     p <- p0 - epsilon * grad_U(q) / 2
   } else {
     temp <- Leapfrog(grad_U, L - 1, epsilon, p0, q0, fM)
     # q=temp[[2]]+epsilon*(temp[[1]])
-    q <- (temp[[2]] + epsilon * (fM(temp[[1]])))
+    q <- temp[[2]] + epsilon * fM(temp[[1]])
     p <- temp[[1]] - epsilon * grad_U(temp[[2]]) / 2
   }
   list(p, q)
