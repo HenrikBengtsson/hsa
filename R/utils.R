@@ -65,3 +65,16 @@ rbind <- local({
   base_rbind <- base::rbind
   function(...) base_rbind(..., deparse.level = 0L)
 })
+
+
+## AD HOC: Trick cstruct1.R code to write files with 12 digits
+## (still plenty) instead of 15 digits for easier 'diff' comparisons
+#' @importFrom utils write.table
+write_tsv <- function(x, ..., row.names = FALSE, col.names = FALSE,
+                      sep = "\t", eol = "\n", digits = 12L) {
+  for (kk in seq_along(x)) {
+    if (is.double(x[[kk]])) x[[kk]] <- round(x[[kk]], digits = digits)
+  }
+  write.table(x, row.names = row.names, col.names = col.names,
+              sep = sep, eol = eol, ...)
+}

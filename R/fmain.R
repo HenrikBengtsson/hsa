@@ -2,7 +2,6 @@
 # Zou, C., Zhang, Y., Ouyang, Z. (2016) HSA: integrating multi-track Hi-C data for genome-scale reconstruction of 3D chromatin structure. Submitted.
 
 #' @importFrom stats glm optim poisson runif
-#' @importFrom utils write.table
 #' @export
 fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog, epslon, mkfix = 0, rho = 0, mk, initialS = NULL, coarsefit = TRUE, rmoutlier = FALSE, fitmode = 0) {
   floglike <- loglikelihood0
@@ -200,8 +199,8 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   betao <- Beta
   iternum <- 0
   P <- P01
-  write.table(cbind(bin, normP(Po)), file = paste0(outfile, ".txt"), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
-  write.table(unlist(betao), file = paste0(outfile, "beta.txt"), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
+  write_tsv(cbind(bin, normP(Po)), file = paste0(outfile, ".txt"))
+  write_tsv(unlist(betao), file = paste0(outfile, "beta.txt"))
   if (fitmode) {
     fHMC <- HMC
     fknt <- kinetic
@@ -353,7 +352,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     if (iternum == (num_coarse - 1) && coarsefit) {
       P01 <- matrix(Pf, nrow = N, ncol = 3L)
     }
-    write.table(cbind(bin, P), file = paste0(outfile, "temp.txt"), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
+    write_tsv(cbind(bin, P), file = paste0(outfile, "temp.txt"))
     recodllk[(iternum %% 7) + 1L] <- Loglike > Loglike0
     if (Loglike > Loglike0) {
       Loglike0 <- Loglike
@@ -366,8 +365,8 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       }
       betao <- Beta
       cat(bo, Ao, invSigmao, Loglike0, "\n")
-      write.table(cbind(bin, Po), file = paste0(outfile, ".txt"), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
-      write.table(unlist(betao), file = paste0(outfile, "beta.txt"), sep = "\t", eol = "\n", row.names = FALSE, col.names = FALSE)
+      write_tsv(cbind(bin, Po), file = paste0(outfile, ".txt"))
+      write_tsv(unlist(betao), file = paste0(outfile, "beta.txt"))
     }
 
     iternum <- iternum + 1

@@ -23,15 +23,6 @@ set.seed(12345)
 
 options(digits = 7L, scipen = 0L) ## Reproducible print() output
 
-## AD HOC: Trick cstruct1.R code to write files with 12 digits
-## (still plenty) instead of 15 digits for easier 'diff' comparisons
-write.table <- function(x, ...) {
-  for (kk in seq_along(x)) {
-    if (is.double(x[[kk]])) x[[kk]] <- round(x[[kk]], digits = 12L)
-  }
-  utils::write.table(x, ...)
-}
-
 ## Benchmarking history:
 ## commit 0880732: ~270 secs
 ## commit ccc77de: ~265 secs

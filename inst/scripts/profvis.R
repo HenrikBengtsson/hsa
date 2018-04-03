@@ -1,7 +1,7 @@
+library("hsa")
+
 library("profvis")
 `[.profvis` <- function(x, i, ...) { prof <- x$x$message$prof; prof <- prof[i, ...]; x$x$message$prof <- prof; x }
-
-source("hsa/cstruct1.R")
 
 outpath <- file.path("tests", ".checks", "profvis")
 dir.create(outpath, recursive = TRUE, showWarnings = FALSE)
@@ -9,7 +9,8 @@ outprefix <- file.path(outpath, "hap1_full_all_22_100000")
 cat(sprintf("Prefix of output files: %s\n", sQuote(outprefix)))
 
 # Input data
-contacts <- file.path("inst", "exdata", "contact_hap1_full_all_22_100000.txt")
+path <- system.file("exdata", package = "hsa")
+contacts <- file.path(path, "contact_hap1_full_all_22_100000.txt")
 
 ## Parameters
 data <- read.table(file = contacts, header = FALSE)
@@ -19,15 +20,6 @@ lsmap0 <- list(data)
 set.seed(12345)
 
 options(digits = 7L, scipen = 0L) ## Reproducible print() output
-
-## AD HOC: Trick cstruct1.R code to write files with 12 digits
-## (still plenty) instead of 15 digits for easier 'diff' comparisons
-write.table <- function(x, ...) {
-  for (kk in seq_along(x)) {
-    if (is.double(x[[kk]])) x[[kk]] <- round(x[[kk]], digits = 12L)
-  }
-  utils::write.table(x, ...)
-}
 
 ## Benchmarking history:
 ## commit 0880732: ~270 secs
