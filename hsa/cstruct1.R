@@ -313,6 +313,8 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
     beta_i <- beta[i]
     distmat_i <- distmat[pos_i, pos_i]
     cx_i <- cx[pos_i, pos_i, i]
+    ## HB: The following calculation is one of the most expensive ones
+    ##     in the whole program. /HB 2018-04-02
     temp <- -cx_i * distmat_i^beta_i
     temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1L, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx_i[v_i]))
     ## sum2(..., idxs)?
@@ -380,6 +382,8 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
     beta_i <- beta[i]
     distmat_i <- distmat[pos_i, pos_i]
     cx_i <- cx[pos_i, pos_i, i]
+    ## HB: The following calculation is one of the most expensive ones
+    ##     in the whole program. /HB 2018-04-02
     temp <- -cx_i * distmat_i^beta_i
     temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1L, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx_i[v_i]))
     ## sum2(..., idxs)?
