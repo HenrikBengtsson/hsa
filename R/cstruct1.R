@@ -48,7 +48,7 @@ finistructure <- function(S0, bin) {
     Y <- rbind(S0_c35, rnorm(3, mean = S0_c35[n, ], sd = colSds(S0_c35[-1, ] - S0_c35[-n, ])))
     bin_c1 <- bin[, 1]
     S <- normP(sapply2(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin_c1)))
-    S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5/N)), nrow = N, ncol = 3L)
+    S <- S + rnorm(3 * N, mean = 0, sd = sqrt(5/N))
   }
   S
 }
