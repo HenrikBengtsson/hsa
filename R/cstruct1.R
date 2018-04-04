@@ -514,8 +514,8 @@ rotamat <- function(theta, full = TRUE) {
   R
 }
 
-dDtotheta <- function(p, b, temp) {
-  l <- matrix(0, nrow = dim(b)[1], ncol = 3L)
+dDtotheta <- function(p, b_t, temp) {
+  l <- matrix(0, nrow = dim(b_t)[2], ncol = 3L)
 
   temp_11 <- temp[1, 1]
   temp_12 <- temp[1, 2]
@@ -530,9 +530,9 @@ dDtotheta <- function(p, b, temp) {
   temp_33 <- temp[3, 3]
   temp_35 <- temp[3, 5]
 
-  b_c1 <- b[, 1]
-  b_c2 <- b[, 2]
-  b_c3 <- b[, 3]
+  b_c1 <- b_t[1, ]
+  b_c2 <- b_t[2, ]
+  b_c3 <- b_t[3, ]
   
   l[, 1] <- -2 * (p[2] * -temp_22 - p[1] * temp_12 - temp_32 * p[3]) * (b_c1 - p[1] * temp_11 + p[2] * -temp_21 - temp_31 * p[3]) - 2 * (p[1] * temp_11 - p[2] * -temp_21 + temp_31 * p[3]) * (b_c2 - p[1] * temp_12 + p[2] * -temp_22 - temp_32 * p[3])
 
@@ -576,7 +576,7 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NUL
   dD[, , 3] <- t(tmp) - tmp
   dL[, 1:3] <- t(sapply2(2:dim(index)[1], FUN = function(x) {
     idxs <- index[x, 1]:index[x, 2]
-    rowSums(sapply2(idxs, FUN = function(i) colSums(dDtotheta(P0[i, -1], b = t(t(P[-idxs, ]) - theta[x - 1, 4:6]), temp = matheta[[x - 1]]) * temp[-idxs, i])))
+    rowSums(sapply2(idxs, FUN = function(i) colSums(dDtotheta(P0[i, -1], b = t(P[-idxs, ]) - theta[x - 1, 4:6], temp = matheta[[x - 1]]) * temp[-idxs, i])))
   }))
   index_rn1 <- index[-1, ]
   dL[, 4] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {
