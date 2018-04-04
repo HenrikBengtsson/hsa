@@ -69,6 +69,21 @@ rbind <- local({
   function(...) base_rbind(..., deparse.level = 0L)
 })
 
+colSums <- function(x) {
+  dim <- dim(x)
+  .colSums(x, m = dim[1], n = dim[2], na.rm = FALSE)
+}
+
+rowSums <- function(x) {
+  dim <- dim(x)
+  .rowSums(x, m = dim[1], n = dim[2], na.rm = FALSE)
+}
+
+colMeans <- function(x) {
+  dim <- dim(x)
+  .colMeans(x, m = dim[1], n = dim[2], na.rm = FALSE)
+}
+
 ## PERFORMANCE: Remove all unnecessary overhead from sapply()
 sapply2 <- function(X, FUN, ...) {
   names(X) <- NULL
