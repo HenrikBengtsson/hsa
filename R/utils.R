@@ -13,6 +13,11 @@ negCDbeta <- function(C, D, beta) {
   .Call(C_negCDbeta, C, D, beta)
 }
 
+## upper_triangle(X) is a faster version of X[upper.tri(X)]
+upper_triangle <- function(x, diag = FALSE) {
+  .Call(C_upper_triangle, x, diag)
+}
+
 ## PERFORMANCE: dist_matrix(x) is a faster version of as.matrix(dist(x)),
 ## because it avoids the overhead from S3 method dispatching, handling of
 ## non-needed attributes etc.  Moreover, dist_matrix(x, square = TRUE) is

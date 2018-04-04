@@ -170,11 +170,12 @@ rmol <- function(loci, P) {
   v <- !is.finite(P1)
   if (any(v)) {
     outlier <- v[, 1] | v[, 2] | v[, 3]
-    spf <- splinefun
     P2 <- P[!outlier, ]
     loci_outlier <- loci[outlier]
     loci_nonoutlier <- loci[!outlier]
-    tmp <- sapply2(1:m, FUN = function(x) spf(loci_nonoutlier, P2[, x])(loci_outlier))
+    tmp <- sapply2(1:m, FUN = function(x) {
+      splinefun(loci_nonoutlier, P2[, x])(loci_outlier)
+    })
     P1[outlier, ] <- tmp
   }
   
@@ -187,7 +188,7 @@ rmol <- function(loci, P) {
     ## Not optimized because not covered by the test.
     for (i in 1:length(v)) {
       v_i <- v[i]
-      idxs <- 1:v[i]
+      idxs <- 1:v_i
       P1[idxs, ] <- t(t(P1[idxs, ]) + (P[v_i + 1L, ] - P[v_i, ]) * 0.8)
     }
     P1 <- tranS(P1, S2 = P)
@@ -238,7 +239,7 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
     cx_i <- cx[pos_i, pos_i, i]
     temp <- negCDbeta(C = cx_i, D = distmat_i, beta = beta_i)
     temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1L, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx_i[v_i]))
-    L_i <- sum(temp[upper.tri(temp)]) / (3 * N)
+    L_i <- sum(upper_triangle(temp)) / (3 * N)
     
     L <- L + L_i
   }
@@ -305,7 +306,7 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
     cx_i <- cx[pos_i, pos_i, i]
     temp <- negCDbeta(C = cx_i, D = distmat_i, beta = beta_i)
     temp[v_i] <- temp[v_i] + mat[pos_i, pos_i + 1L, i][v_i] * (beta_i * log(distmat_i[v_i]) + log(cx_i[v_i]))
-    L_i <- sum(temp[upper.tri(temp)]) / (3 * N)
+    L_i <- sum(upper_triangle(temp)) / (3 * N)
     
     L <- L + L_i
   }

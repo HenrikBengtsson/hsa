@@ -8,6 +8,7 @@ static R_CallMethodDef callMethods[]  = {
   CALLDEF(sumsq, 1),
   CALLDEF(sumprod, 2),
   CALLDEF(negCDbeta, 3),
+  CALLDEF(upper_triangle, 2),
   {NULL, NULL, 0}
 };
 

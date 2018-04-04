@@ -47,15 +47,15 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       temp <- as.matrix(lsmap0[[c]][, -(1:2)])
       if (isSymmetric(temp)) {
         mat[pos_c, pos_c + 1L, c] <- temp
-        gldata[[c]] <- temp[upper.tri(temp)]
+        gldata[[c]] <- upper_triangle(temp)
       } else {
         temp_t <- t(temp)
         mat[pos_c, pos_c + 1L, c] <- temp + temp_t
         temp <- temp + temp_t
-        gldata[[c]] <- temp[upper.tri(temp)]
+        gldata[[c]] <- upper_triangle(temp)
       }
       mat0[, , c] <- mat[, , c]
-      gldata[[c]] <- data.frame(cbind(temp[upper.tri(temp)], rep(1, times = length(gldata[[c]]))))
+      gldata[[c]] <- data.frame(cbind(upper_triangle(temp), rep(1, times = length(gldata[[c]]))))
     }
 
     if (is.null(initialS)) {
@@ -69,7 +69,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     for (c in 1:C) {
       pos_c <- pos[[c]]
       dmat1 <- dmat[pos_c, pos_c]
-      dmat1 <- dmat1[upper.tri(dmat1)]
+      dmat1 <- upper_triangle(dmat1)
       gldata[[c]][, dim(gldata[[c]])[2]] <- log(dmat1)
       colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
@@ -95,9 +95,9 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       }
       mat0[, , c] <- mat[, , c]
       if (is.numeric(lscov[[c]])) {
-        gldata[[c]] <- temp[upper.tri(temp)]
+        gldata[[c]] <- upper_triangle(temp)
       } else {
-        gldata[[c]] <- cbind(temp[upper.tri(temp)], sapply2(lscov[[c]], FUN = function(x) log(x[upper.tri(x)])))
+        gldata[[c]] <- cbind(upper_triangle(temp), sapply2(lscov[[c]], FUN = function(x) log(upper_triangle(x))))
       }
       gldata[[c]] <- data.frame(gldata[[c]])
       colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
@@ -125,7 +125,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     for (c in 1:C) {
       pos_c <- pos[[c]]
       dmat1 <- dmat[pos_c, pos_c]
-      dmat1 <- dmat1[upper.tri(dmat1)]
+      dmat1 <- upper_triangle(dmat1)
       gldata[[c]][, dim(gldata[[c]])[2]] <- log(dmat1)
       colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
@@ -243,7 +243,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
 
     if (mkfix && iternum >= 5) {
       P0 <- cbind(pbin, P)
-      thetam <- optim(c(as.vector(A0), b0, as.vector(invSigma0[upper.tri(invSigma0, diag = TRUE)])), fn = function(theta) -mkcloglikelihood(theta, P0 = P0))
+      thetam <- optim(c(as.vector(A0), b0, as.vector(upper_triangle(invSigma0, diag = TRUE))), fn = function(theta) -mkcloglikelihood(theta, P0 = P0))
       thetam <- thetam[["par"]]
 
       A <- matrix(thetam[1:9], nrow = 3L, ncol = 3L)
@@ -265,7 +265,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     for (c in 1:C) {
       pos_c <- pos[[c]]
       dmat1 <- dmat[pos_c, pos_c]
-      dmat1 <- dmat1[upper.tri(dmat1)]
+      dmat1 <- upper_triangle(dmat1)
       gldata[[c]][, dim(gldata[[c]])[2]] <- log(dmat1)
       colnames(gldata[[c]]) <- paste0("V", 1:dim(gldata[[c]])[2])
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
