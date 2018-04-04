@@ -312,14 +312,14 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
     L <- L + L_i
   }
   if (is.null(mak)) {
-    L <- L + sum(sapply2(2:N, FUN = function(ii) {
+    L <- L + sum(unlist(lapply(2:N, FUN = function(ii) {
       nmp <- fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
       R_ii <- P[ii, ] - nmp[["mu"]]
       Sigma <- nmp[["Sigma"]]
       -R_ii %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
-    })) / (3 * N)
+    }), recursive = FALSE, use.names = FALSE)) / (3 * N)
   } else {
-    L <- L + sum(sapply2(2:N, FUN = function(ii) {
+    L <- L + sum(unlist(lapply(2:N, FUN = function(ii) {
       mak_ii1 <- mak[[ii - 1L]]
       mu <- mak_ii1[["mu"]]
       Sigma <- mak_ii1[["Sigma"]]
@@ -327,7 +327,7 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
       mu <- mu + A %*% P[ii - 1L, ]
       R_ii <- P[ii, ] - mu
       -t(R_ii) %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
-    })) / (3 * N)
+    }), recursive = FALSE, use.names = FALSE)) / (3 * N)
   }
   L
 }
@@ -695,6 +695,7 @@ HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
     cat("NA or inf produced!!", "\n")
     return(rmol(1:N, P = current_q))
   } else {
+    ## HB: (const) / T0 / const ?!?
     if (runif(1L) < exp((const) / T0 / const)) {
       if (I_trans) {
         q <- rmol(1:N, P = q)
