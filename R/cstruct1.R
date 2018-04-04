@@ -179,8 +179,8 @@ rmol <- function(loci, P) {
     P1[outlier, ] <- tmp
   }
   
-  d1 <- sqrt(rowSums((P1[-1, ] - P1[-n, ])^2))
-  cutoff <- 10 * median(d1)
+  d1 <- rowSums((P1[-1, ] - P1[-n, ])^2)
+  cutoff <- 100 * median(d1)
   outlier <- (d1 >= cutoff)
   if (any(outlier)) {
     v <- which(outlier)
