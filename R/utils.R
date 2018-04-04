@@ -26,11 +26,9 @@ upper_triangle <- function(x, diag = FALSE) {
 dist_matrix <- function(x, square = FALSE) {
   x <- dist(x)
   size <- attr(x, "Size")
-  df <- matrix(0, nrow = size, ncol = size)
-  if (square) x <- x ^ 2
-  df[row(df) > col(df)] <- x
-  df + t(df)
+  .Call(C_dist_matrix, x, size, square)
 }
+
 
 ## PERFORMANCE: log_det(x) is a faster version of log(det(x)), because
 ## it avoids overhead from S3 method dispatching and skips an internal

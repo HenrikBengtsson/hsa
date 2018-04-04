@@ -421,11 +421,10 @@ other attached packages:
 [1] hsa_0.0.0-9000
 
 loaded via a namespace (and not attached):
-[1] MASS_7.3-49             compiler_3.4.4          tools_3.4.4            
-[4] matrixStats_0.53.1-9000
+[1] MASS_7.3-49             compiler_3.4.4          tools_3.4.4             matrixStats_0.53.1-9000
 
 Processing time:
    user  system elapsed 
-205.340   0.248 205.618 
+196.260   0.144 196.483 
 
 Validation:

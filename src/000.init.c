@@ -5,9 +5,10 @@
 #define CALLDEF(name, n) {#name, (DL_FUNC) &name, n}
 
 static R_CallMethodDef callMethods[]  = {
-  CALLDEF(sumsq, 1),
-  CALLDEF(sumprod, 2),
+  CALLDEF(dist_matrix, 3),
   CALLDEF(negCDbeta, 3),
+  CALLDEF(sumprod, 2),
+  CALLDEF(sumsq, 1),
   CALLDEF(upper_triangle, 2),
   {NULL, NULL, 0}
 };
