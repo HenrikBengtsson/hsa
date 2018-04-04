@@ -37,10 +37,24 @@ log_det <- function(x) {
   determinant.matrix(x, logarithm = TRUE)[[1L]]
 }
 
-## PERFORMANCE: Avoid overhead from S3 dispatch on solve()
+## PERFORMANCE: Avoid overhead from S3 dispatch on solve() and as.matrix()
+#' @importFrom utils globalVariables
 solve <- local({
   bs <- list()
+  
+  globalVariables("solve_matrix")
+  solve_matrix <- NULL
+  
   function(a, b = NULL) {
+    if (is.null(solve_matrix)) {
+      fcn <- base::solve.default
+      body <- body(fcn)
+      body <- body[[length(body)]]
+      ## Did we get what we expected, otherwise ignore it.
+      if (identical(body[[1]], as.symbol(".Internal"))) body(fcn) <- body
+      solve_matrix <<- fcn
+    }
+    
     if (is.null(b)) {
       n <- nrow(a)
       ## Memoization of 'b'
@@ -50,7 +64,8 @@ solve <- local({
         bs[[n]] <<- b
       }
     }
-    solve.default(a, b)
+
+    solve_matrix(a, b)
   }
 })
 
