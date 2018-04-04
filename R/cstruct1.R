@@ -184,13 +184,13 @@ rmol <- function(loci, P) {
   outlier <- (d1 >= cutoff)
   if (any(outlier)) {
     v <- which(outlier)
-    ## HB: The below does lots of t(x) over and over.
-    ## Not optimized because not covered by the test.
+    P1_t <- t(P1)
     for (i in 1:length(v)) {
       v_i <- v[i]
       idxs <- 1:v_i
-      P1[idxs, ] <- t(t(P1[idxs, ]) + (P[v_i + 1L, ] - P[v_i, ]) * 0.8)
+      P1_t[, idxs] <- P1_t[, idxs] + (P[v_i + 1L, ] - P[v_i, ]) * 0.8
     }
+    P1 <- t(P1_t)
     P1 <- tranS(P1, S2 = P)
   }
 
