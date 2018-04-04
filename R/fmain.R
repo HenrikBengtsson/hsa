@@ -28,7 +28,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   gldata <- vector("list", length = C)
   A0 <- diag(3)
   b0 <- c(0, 0, 0)
-  t <- 0:(N - 1)
+  t <- 0:(N - 1L)
   invSigma0 <- diag(3)
   invS <- diag(3) * sqrt(N)
   mat <- array(NA_real_, dim = c(N, N + 1L, C))
@@ -152,10 +152,10 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   } else {
     mak <- NULL
   }
-  if (N > 1000) {
-    m <- 100
-    if (N > 2000) {
-      m <- 200
+  if (N > 1000L) {
+    m <- 100L
+    if (N > 2000L) {
+      m <- 200L
     }
     index <- cbind(c(1, seq(from = m, to = N - m, by = m)), c(seq(from = m, to = N - m, by = m), N))
     index[-1, 1] <- index[-1, 1] + 1L
@@ -197,7 +197,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
   invSigmao <- invSigma0
   Po <- P01
   betao <- Beta
-  iternum <- 0
+  iternum <- 0L
   P <- P01
   write_tsv(cbind(bin, normP(Po)), file = paste0(outfile, ".txt"))
   write_tsv(unlist(betao), file = paste0(outfile, "beta.txt"))
@@ -215,23 +215,23 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     num_coarse <- min(20, floor(Maxiter / 4))
   }
   while (iternum < Maxiter) {
-    u <- 0
-    if (iternum < 20) {
-      submaxiter1 <- max(submaxiter + 50, 150)
-      lambda1 <- max(submaxiter + 50, 50)
+    u <- 0L
+    if (iternum < 20L) {
+      submaxiter1 <- max(submaxiter + 50L, 150L)
+      lambda1 <- max(submaxiter + 50L, 50L)
     } else {
       if (iternum < 0.8 * Maxiter) {
         submaxiter1 <- submaxiter
         lambda1 <- lambda
       } else {
-        submaxiter1 <- min(submaxiter * 1.1, 300)
+        submaxiter1 <- min(submaxiter * 1.1, 300L)
         lambda1 <- min(lambda * 1.1, 100)
       }
     }
 
     current_epslon <- ifelse(iternum < num_coarse && coarsefit, eps_coarse, epslon)
 
-    while (u < submaxiter && (N < 1000 || (iternum %% 10 == 1 && iternum > 5) || u < 3)) {
+    while (u < submaxiter && (N < 1000L || (iternum %% 10 == 1L && iternum > 5L) || u < 3L)) {
       ## HMC(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
       P <- fHMC(
         U = function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat, pos, v, mak),
@@ -244,14 +244,14 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
         fM = function(p) momentum(p, N = N, rho = rho)
       )
       P01 <- P
-      u <- u + 1
+      u <- u + 1L
     }
 
     if (!mk) {
       P <- normP(P)
     }
 
-    if (mkfix && iternum >= 5) {
+    if (mkfix && iternum >= 5L) {
       P0 <- cbind(pbin, P)
       thetam <- optim(c(as.vector(A0), b0, as.vector(upper_triangle(invSigma0, diag = TRUE))), fn = function(theta) -mkcloglikelihood(theta, P0 = P0))
       thetam <- thetam[["par"]]
@@ -281,7 +281,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       betaest <- glm(V1 ~ ., family = poisson(), data = gldata[[c]])
       Beta[[c]] <- as.vector(betaest[["coefficients"]])
       cat(iternum, ": ", Beta[[c]], "\n")
-      beta1[c] <- ifelse(iternum <= 5, min(-abs(Beta[[c]][length(Beta[[c]])]), -1.3), min(-abs(Beta[[c]][length(Beta[[c]])]), -0.6))
+      beta1[c] <- ifelse(iternum <= 5L, min(-abs(Beta[[c]][length(Beta[[c]])]), -1.3), min(-abs(Beta[[c]][length(Beta[[c]])]), -0.6))
       covmat0[, , c] <- covmat0[, , c] * exp(Beta[[c]][1])
       if (!is.numeric(lscov0)) {
         if (!is.numeric(lscov0[[c]])) {
@@ -293,7 +293,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     }
     usLoglike <- floglike(cbind(pbin, P), A, b, invSigma, beta1, covmat0, mat)
     cat("LLK after GLM: ", usLoglike, "\n")
-    if (N > 1000 && iternum < (Maxiter - 5)) {
+    if (N > 1000L && iternum < (Maxiter - 5L)) {
       Psub <- do.call(rbind, args = lapply(1:dim(index)[1], FUN = function(x) {
         idxs <- index[x, 1]:index[x, 2]
         tranS(suboptimz(pbin[idxs], P[idxs, ], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, c(1L, idxs + 1L), ], floglike, fdloglike, 0), S2 = P[idxs, ])
@@ -338,7 +338,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     }
     Pf <- avsmth(pbin, P = P)
     beta2 <- sapply2(Beta, FUN = function(x) x[length(x)])
-    if (N < 1000) {
+    if (N < 1000L) {
       tmp_opt <- optim(c(1, beta1), fn = function(x) -floglike(cbind(pbin, x[1] * Pf), A, b, invSigma, x[-1], covmat0, mat, pos, v, mak))
       sLoglike <- -tmp_opt[["value"]]
       cat("LLK before and after smoothing:", c(Loglike, sLoglike), "(", tmp_opt[["par"]], ")", "\n")
@@ -357,9 +357,9 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       }
     }
 
-    beta1 <- pmin(beta1, ifelse(iternum > 10, -0.6, -1))
+    beta1 <- pmin(beta1, ifelse(iternum > 10L, -0.6, -1))
     P01 <- P
-    if (iternum == (num_coarse - 1) && coarsefit) {
+    if (iternum == (num_coarse - 1L) && coarsefit) {
       P01 <- matrix(Pf, nrow = N, ncol = 3L)
     }
     write_tsv(cbind(bin, P), file = paste0(outfile, "temp.txt"))
@@ -379,7 +379,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       write_tsv(unlist(betao), file = paste0(outfile, "beta.txt"))
     }
 
-    iternum <- iternum + 1
+    iternum <- iternum + 1L
   }
   list(Ao, bo, invSigmao, Po, betao)
 }

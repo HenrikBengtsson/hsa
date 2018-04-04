@@ -59,11 +59,11 @@ finistructure <- function(S0, bin) {
 ## which then had to be extracted again.  Returning the parameters as is also makes
 ## it much clear what is calculated.
 fmkorder_temp <- function(m, A, b, sigma, S) {
-  if (m < 2) {
+  if (m < 2L) {
     mu <- A %*% S + b
     Sigma <- sigma
   } else {
-    tmp <- fmkorder_temp(m - 1, A, b, sigma, S)
+    tmp <- fmkorder_temp(m - 1L, A, b, sigma, S)
     mu <- A %*% tmp[["mu"]] + b
     temp <- tmp[["A"]] %*% A
     Sigma <- tmp[["Sigma"]] + t(temp) %*% sigma %*% temp
@@ -710,7 +710,7 @@ HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
 
 #' @importFrom stats optim rnorm
 Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
-  if (N == 2) {
+  if (N == 2L) {
     pbin_t <- pbin[1:2]
     cx_t <- cx[1:2, 1:2, ]
     mat_t <- mat[1:2, 1:3, ]
@@ -719,7 +719,7 @@ Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
     })
     return(rbind(q0, t(Padd[["par"]])))
   } else {
-    temp <- Qsis(N - 1, pbin, A, b, invSigma, beta, cx, mat, q0, fL)
+    temp <- Qsis(N - 1L, pbin, A, b, invSigma, beta, cx, mat, q0, fL)
     pbin_t <- pbin[1:N]
     cx_t <- cx[1:N, 1:N, ]
     mat_t <- mat[1:N, 1:(N + 1L), ]
@@ -769,8 +769,8 @@ subinitial <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, f
     pos <- lapply(1:ncol(pos), FUN = function(i) pos[, i])
   }
   P0 <- Sis(4, pbin, A0, b0, invSigma0, beta1, covmat0, mat, c(0, 0, 0), function(x, ...) -loglikelihood(x, ...))
-  u <- 0
-  while (u < 100) {
+  u <- 0L
+  while (u < 100L) {
     ## HMC(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
     P <- HMC(
       U = function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat),
@@ -783,15 +783,15 @@ subinitial <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, f
       fM = function(p) momentum(p, N = N, rho = 0.1),
       I_trans = TRUE)
     P0 <- P
-    u <- u + 1
+    u <- u + 1L
   }
   P
 }
 
 suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdloglike, I_mle = TRUE) {
   epslon <- 0.0005
-  stp <- 35
-  M <- 100
+  stp <- 35L
+  M <- 100L
   if (is.na(dim(covmat0)[3])) {
     covmat0 <- array(covmat0, dim = c(dim(covmat0), 1L))
     mat <- array(mat, dim = c(dim(mat), 1L))
@@ -800,7 +800,7 @@ suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike
   if (!is.list(pos)) {
     pos <- lapply(1:ncol(pos), FUN = function(i) pos[, i])
   }
-  u <- 0
+  u <- 0L
   Po <- P0
   N <- dim(P0)[1]
   Lo <- floglike(cbind(pbin, P0), A0, b0, invSigma0, beta1, covmat0, mat)
@@ -833,7 +833,7 @@ suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike
         Po <- P
         Lo <- L
       }
-      u <- u + 1
+      u <- u + 1L
     }
   } else {
     while (u < M) {
@@ -848,7 +848,7 @@ suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike
         fK = kinetic0_1,
         fM = momentum0)
       P0 <- P
-      u <- u + 1
+      u <- u + 1L
     }
     Po <- P0
   }

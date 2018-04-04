@@ -1,19 +1,19 @@
 #' @importFrom stats optim rnorm
 finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdloglike) {
   N <- length(pbin)
-  if (N <= 500) {
+  if (N <= 500L) {
     P <- Sis(5, pbin, A0, b0, invSigma0, beta1, covmat0, mat, c(0, 0, 0), function(x, ...) -loglikelihood(x, ...))
   } else {
-    if (N > 500 && N <= 2000) {
-      m <- 100
+    if (N > 500L && N <= 2000L) {
+      m <- 100L
     } else {
-      m <- 200
+      m <- 200L
     }
     index <- cbind(c(1, seq(from = m, to = N - m, by = m)), c(seq(from = m, to = N - m, by = m), N))
     index[-1, 1] <- index[-1, 1] + 1L
     lP <- lapply(1:dim(index)[1], FUN = function(x) {
       idxs <- index[x, 1]:index[x, 2]
-      subinitial(pbin[idxs], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, c(1, idxs + 1L), ], floglike, fdloglike)
+      subinitial(pbin[idxs], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, c(1L, idxs + 1L), ], floglike, fdloglike)
     })
     P <- matrix(0, nrow = N, ncol = 3L)
     P[index[1, 1]:index[1, 2], ] <- lP[[1]]
