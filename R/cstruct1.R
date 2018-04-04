@@ -210,7 +210,7 @@ avsmth <- local({
 })
 
 loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NULL, mak = NULL) {
-  L <- 0
+  L <- 0.0
   P <- P0[, -1]
   sigma <- solve(invSigma)
   N <- dim(P)[1]
@@ -278,7 +278,7 @@ dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, ma
 }
 
 loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NULL, mak = NULL) {
-  L <- 0
+  L <- 0.0
   P <- P0[, -1]
   sigma <- solve(invSigma)
   N <- dim(P)[1]
@@ -604,11 +604,11 @@ v2mat <- function(theta) {
 
 Leapfrog <- function(grad_U, L, epsilon, p0, q0, fM) {
   N <- dim(p0)[1]
-  if (L < 2) {
+  if (L < 2L) {
     q <- q0 + epsilon * fM(p0)
     p <- p0 - epsilon * grad_U(q) / 2
   } else {
-    temp <- Leapfrog(grad_U, L - 1, epsilon, p0, q0, fM)
+    temp <- Leapfrog(grad_U, L = L - 1L, epsilon, p0, q0, fM)
     q <- temp[[2]] + epsilon * fM(temp[[1]])
     p <- temp[[1]] - epsilon * grad_U(temp[[2]]) / 2
   }
@@ -663,6 +663,7 @@ HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE) 
 }
 
 #' @importFrom stats rnorm runif
+## HMC1(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
 HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE) {
   N <- dim(current_q0)[1]
   m <- dim(current_q0)[2]
@@ -775,7 +776,7 @@ subinitial <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, f
       U = function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat),
       grad_U = function(y) -fdloglike(cbind(pbin, y), A0, b0, invSigma0, beta1, covmat0, mat, pos),
       epsilon = 0.002,
-      L = 20,
+      L = 20L,
       current_q0 = P0,
       T0 = 10 * exp(-u / 20),
       fK = function(p) kinetic(p, N = N, rho = 0.1),
@@ -803,11 +804,29 @@ suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike
   Po <- P0
   N <- dim(P0)[1]
   Lo <- floglike(cbind(pbin, P0), A0, b0, invSigma0, beta1, covmat0, mat)
-  P <- HMC1(function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat), function(y) -fdloglike(cbind(pbin, y), A0, b0, invSigma0, beta1, covmat0, mat, pos), epslon, stp, P0, exp(-u * 3.5 / M), kinetic0_1, momentum0)
+  ## HMC1(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
+  P <- HMC1(
+    U = function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat),
+    grad_U = function(y) -fdloglike(cbind(pbin, y), A0, b0, invSigma0, beta1, covmat0, mat, pos),
+    epsilon = epslon,
+    L = stp,
+    current_q0 = P0,
+    T0 = exp(-u * 3.5 / M),
+    fK = kinetic0_1,
+    fM = momentum0)
   P0 <- P
   if (I_mle) {
     while (u < M) {
-      P <- HMC1(function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat), function(y) -fdloglike(cbind(pbin, y), A0, b0, invSigma0, beta1, covmat0, mat, pos), epslon, stp, P0, exp(-u * 3.5 / M), kinetic0_1, momentum0)
+      ## HMC1(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
+      P <- HMC1(
+        U = function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat),
+        grad_U = function(y) -fdloglike(cbind(pbin, y), A0, b0, invSigma0, beta1, covmat0, mat, pos),
+        epsilon = epslon,
+        L = stp,
+        current_q0 = P0,
+        T0 = exp(-u * 3.5 / M),
+        fK = kinetic0_1,
+        fM = momentum0)
       P0 <- P
       L <- floglike(cbind(pbin, P), A0, b0, invSigma0, beta1, covmat0, mat)
       if (L >= Lo) {
@@ -818,7 +837,16 @@ suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike
     }
   } else {
     while (u < M) {
-      P <- HMC1(function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat), function(y) -fdloglike(cbind(pbin, y), A0, b0, invSigma0, beta1, covmat0, mat, pos), epslon, stp, P0, exp(-u * 3.5 / M), kinetic0_1, momentum0)
+      ## HMC1(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
+      P <- HMC1(
+        U = function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat),
+        grad_U = function(y) -fdloglike(cbind(pbin, y), A0, b0, invSigma0, beta1, covmat0, mat, pos),
+        epsilon = epslon,
+        L = stp,
+        current_q0 = P0,
+        T0 = exp(-u * 3.5 / M),
+        fK = kinetic0_1,
+        fM = momentum0)
       P0 <- P
       u <- u + 1
     }
