@@ -107,6 +107,7 @@ sapply2 <- function(X, FUN, ...) {
   r
 }
 
+
 ## AD HOC: Trick cstruct1.R code to write files with 12 digits
 ## (still plenty) instead of 15 digits for easier 'diff' comparisons
 #' @importFrom utils write.table

@@ -3,6 +3,7 @@
 export(fmain)
 importFrom(MASS,ginv)
 importFrom(matrixStats,colSds)
+importFrom(matrixStats,t_tx_OP_y)
 importFrom(stats,dist)
 importFrom(stats,filter)
 importFrom(stats,glm)

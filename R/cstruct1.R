@@ -246,6 +246,7 @@ loglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NU
   L
 }
 
+#' @importFrom matrixStats t_tx_OP_y
 dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak = NULL) {
   P <- P0[, -1]
   sigma <- solve(invSigma)
@@ -268,11 +269,11 @@ dloglikelihood0 <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, ma
   }
   diag(temp) <- 0
   tmp <- temp * P[, 1]
-  dL[, 1] <- colSums(t(tmp) - tmp) / (3 * N)
+  dL[, 1] <- rowSums(t_tx_OP_y(tmp, tmp, OP = 2L)) / (3 * N)
   tmp <- temp * P[, 2]
-  dL[, 2] <- colSums(t(tmp) - tmp) / (3 * N)
+  dL[, 2] <- rowSums(t_tx_OP_y(tmp, tmp, OP = 2L)) / (3 * N)
   tmp <- temp * P[, 3]
-  dL[, 3] <- colSums(t(tmp) - tmp) / (3 * N)
+  dL[, 3] <- rowSums(t_tx_OP_y(tmp, tmp, OP = 2L)) / (3 * N)
   dL
 }
 
@@ -331,6 +332,7 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
   L
 }
 
+#' @importFrom matrixStats t_tx_OP_y
 dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak = NULL) {
   P <- P0[, -1]
   sigma <- solve(invSigma)
@@ -354,11 +356,11 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
   }
   diag(temp) <- 0
   tmp <- temp * P[, 1]
-  dL[, 1] <- colSums(t(tmp) - tmp) / (3 * N)
+  dL[, 1] <- rowSums(t_tx_OP_y(tmp, tmp, OP = 2L)) / (3 * N)
   tmp <- temp * P[, 2]
-  dL[, 2] <- colSums(t(tmp) - tmp) / (3 * N)
+  dL[, 2] <- rowSums(t_tx_OP_y(tmp, tmp, OP = 2L)) / (3 * N)
   tmp <- temp * P[, 3]
-  dL[, 3] <- colSums(t(tmp) - tmp) / (3 * N)
+  dL[, 3] <- rowSums(t_tx_OP_y(tmp, tmp, OP = 2L)) / (3 * N)
   if (is.null(mak)) {
     nmp <- lapply(2:N, FUN = function(ii) {
       fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
@@ -423,6 +425,7 @@ mkcloglikelihood <- function(theta, P0) {
   mean(temp) / 3
 }
 
+#' @importFrom matrixStats t_tx_OP_y
 dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
   P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, args = sapply2(2:dim(index)[1], FUN = function(x) {
     t(t(P0[index[x, 1]:index[x, 2], -1] %*% matrix(theta[x - 1L, 1:9], nrow = 3L, ncol = 3L)) + theta[x - 1L, 10:12])
@@ -540,6 +543,7 @@ dDtotheta <- function(p, b, temp) {
   l
 }
 
+#' @importFrom matrixStats t_tx_OP_y
 dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
   matheta <- lapply(2:dim(index)[1], FUN = function(x) rotamat(theta[x - 1L, ]))
   P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, args = sapply2(2:dim(index)[1], FUN = function(x) {
