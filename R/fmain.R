@@ -232,7 +232,17 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     current_epslon <- ifelse(iternum < num_coarse && coarsefit, eps_coarse, epslon)
 
     while (u < submaxiter && (N < 1000 || (iternum %% 10 == 1 && iternum > 5) || u < 3)) {
-      P <- fHMC(function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat, pos, v, mak), function(y) -fdloglike(cbind(pbin, y), A0, b0, invSigma0, beta1, covmat0, mat, pos, v, mak), current_epslon, Leapfrog, P01, exp(-u / lambda), function(p) fknt(p, N, rho), function(p) momentum(p, N = N, rho = rho))
+      ## HMC(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
+      P <- fHMC(
+        U = function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat, pos, v, mak),
+        grad_U = function(y) -fdloglike(cbind(pbin, y), A0, b0, invSigma0, beta1, covmat0, mat, pos, v, mak),
+        epsilon = current_epslon,
+        L = Leapfrog,
+        current_q0 = P01,
+        T0 = exp(-u / lambda),
+        fK = function(p) fknt(p, N, rho),
+        fM = function(p) momentum(p, N = N, rho = rho)
+      )
       P01 <- P
       u <- u + 1
     }

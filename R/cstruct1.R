@@ -770,7 +770,17 @@ subinitial <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, f
   P0 <- Sis(4, pbin, A0, b0, invSigma0, beta1, covmat0, mat, c(0, 0, 0), function(x, ...) -loglikelihood(x, ...))
   u <- 0
   while (u < 100) {
-    P <- HMC(function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat), function(y) -fdloglike(cbind(pbin, y), A0, b0, invSigma0, beta1, covmat0, mat, pos), 0.002, 20, P0, 10 * exp(-u / 20), function(p) kinetic(p, N = N, rho = 0.1), function(p) momentum(p, N = N, rho = 0.1), 1)
+    ## HMC(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
+    P <- HMC(
+      U = function(x) -floglike(cbind(pbin, x), A0, b0, invSigma0, beta1, covmat0, mat),
+      grad_U = function(y) -fdloglike(cbind(pbin, y), A0, b0, invSigma0, beta1, covmat0, mat, pos),
+      epsilon = 0.002,
+      L = 20,
+      current_q0 = P0,
+      T0 = 10 * exp(-u / 20),
+      fK = function(p) kinetic(p, N = N, rho = 0.1),
+      fM = function(p) momentum(p, N = N, rho = 0.1),
+      I_trans = TRUE)
     P0 <- P
     u <- u + 1
   }
