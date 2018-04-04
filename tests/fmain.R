@@ -1,10 +1,5 @@
 library("hsa")
 
-outpath <- file.path("tests", ".checks")
-dir.create(outpath, recursive = TRUE, showWarnings = FALSE)
-outprefix <- file.path(outpath, "hap1_full_all_22_100000")
-cat(sprintf("Prefix of output files: %s\n", sQuote(outprefix)))
-
 # Input data
 path <- system.file("exdata", package = "hsa")
 contacts <- file.path(path, "contact_hap1_full_all_22_100000.txt")
@@ -14,7 +9,13 @@ mak <- 1L
 Iscovfile <- FALSE
 K <- 1L
 lscov0 <- 0L
-Leapfrog <- as.integer(Sys.getenv("HSA_LEAPFROG", 5))
+Leapfrog <- as.integer(Sys.getenv("HSA_LEAPFROG", 3L))
+
+resname <- sprintf("Leapfrog=%d", Leapfrog)
+outpath <- file.path("tests", ".checks", resname)
+dir.create(outpath, recursive = TRUE, showWarnings = FALSE)
+outprefix <- file.path(outpath, "hap1_full_all_22_100000")
+cat(sprintf("Prefix of output files: %s\n", sQuote(outprefix)))
 
 data <- read.table(file = contacts, header = FALSE)
 data <- as.matrix(data)
@@ -52,10 +53,10 @@ cat("\nProcessing time:\n")
 print(dt)
 
 cat("\nValidation:\n")
-data0_1 <- read.table(file.path(path, basename(file1)), header = FALSE)
+data0_1 <- read.table(file.path(path, resname, basename(file1)), header = FALSE)
 data1_1 <- read.table(file1, header = FALSE)
 stopifnot(all.equal(data1_1, data0_1))
 
-data0_2 <- read.table(file.path(path, basename(file2)), header = FALSE)
+data0_2 <- read.table(file.path(path, resname, basename(file2)), header = FALSE)
 data1_2 <- read.table(file2, header = FALSE)
 stopifnot(all.equal(data1_2, data0_2))

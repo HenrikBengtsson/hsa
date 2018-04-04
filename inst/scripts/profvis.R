@@ -8,11 +8,6 @@ library("profvis")
   x
 }
 
-outpath <- file.path("tests", ".checks", "profvis")
-dir.create(outpath, recursive = TRUE, showWarnings = FALSE)
-outprefix <- file.path(outpath, "hap1_full_all_22_100000")
-cat(sprintf("Prefix of output files: %s\n", sQuote(outprefix)))
-
 # Input data
 path <- system.file("exdata", package = "hsa")
 contacts <- file.path(path, "contact_hap1_full_all_22_100000.txt")
@@ -21,7 +16,13 @@ contacts <- file.path(path, "contact_hap1_full_all_22_100000.txt")
 data <- read.table(file = contacts, header = FALSE)
 data <- as.matrix(data)
 lsmap0 <- list(data)
-Leapfrog <- as.integer(Sys.getenv("HSA_LEAPFROG", 5))
+Leapfrog <- as.integer(Sys.getenv("HSA_LEAPFROG", 3L))
+
+resname <- sprintf("Leapfrog=%d", Leapfrog)
+outpath <- file.path("tests", ".checks", "profvis", resname)
+dir.create(outpath, recursive = TRUE, showWarnings = FALSE)
+outprefix <- file.path(outpath, "hap1_full_all_22_100000")
+cat(sprintf("Prefix of output files: %s\n", sQuote(outprefix)))
 
 set.seed(12345)
 
@@ -55,7 +56,4 @@ cat("\n\n")
 print(sessionInfo())
 
 ## Render profvis results
-print(head(pv, n = 100e3))
-
-
-
+print(pv[1:100e3, ])

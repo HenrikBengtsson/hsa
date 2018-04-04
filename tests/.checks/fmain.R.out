@@ -1,4 +1,4 @@
-Prefix of output files: 'tests/.checks/hap1_full_all_22_100000'
+Prefix of output files: 'tests/.checks/Leapfrog=20/hap1_full_all_22_100000'
 -0.9811756 -1.814995 
 LLK0:  185.8771 
 number of nodes: 351 
@@ -409,12 +409,8 @@ BLAS: /usr/lib/atlas-base/atlas/libblas.so.3.0
 LAPACK: /usr/lib/atlas-base/atlas/liblapack.so.3.0
 
 locale:
- [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
- [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
- [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
- [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
- [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C             LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 
 attached base packages:
 [1] stats     graphics  grDevices utils     datasets  base     
@@ -423,11 +419,10 @@ other attached packages:
 [1] hsa_0.0.0-9000
 
 loaded via a namespace (and not attached):
-[1] MASS_7.3-49             compiler_3.4.4          tools_3.4.4            
-[4] matrixStats_0.53.1-9000
+[1] MASS_7.3-49             compiler_3.4.4          tools_3.4.4             matrixStats_0.53.1-9000
 
 Processing time:
    user  system elapsed 
-201.364   0.164 201.529 
+215.648   0.160 215.905 
 
 Validation:
