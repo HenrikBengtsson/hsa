@@ -34,11 +34,7 @@ dist_matrix <- function(x, square = FALSE) {
 ## it avoids overhead from S3 method dispatching and skips an internal
 ## log(exp(t)) step.
 log_det <- function(x) {
-  z <- determinant.matrix(x, logarithm = TRUE)
-#  d <- c(z$sign * exp(z$modulus))
-#  log(d)
-  if (z[["sign"]] < 0) stop("Log-determinant: NaN")
-  c(z[["modulus"]])
+  determinant.matrix(x, logarithm = TRUE)[[1L]]
 }
 
 ## PERFORMANCE: Avoid overhead from S3 dispatch on solve()
