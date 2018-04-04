@@ -108,6 +108,20 @@ sapply2 <- function(X, FUN, ...) {
 }
 
 
+## BACKWARD COMPATIBILITY
+t_tx_OP_y <- local({
+  if (packageVersion("matrixStats") <= "0.53.1") {
+    fcn0 <- matrixStats::t_tx_OP_y
+    function(x, y, OP) {
+      OP <- c("+", "-", "*", "/")[OP]
+      fcn0(x, y, OP)
+    }
+  } else {
+    matrixStats::t_tx_OP_y
+  }
+})
+
+
 ## AD HOC: Trick cstruct1.R code to write files with 12 digits
 ## (still plenty) instead of 15 digits for easier 'diff' comparisons
 #' @importFrom utils write.table
