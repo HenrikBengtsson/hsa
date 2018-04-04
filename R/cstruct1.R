@@ -64,9 +64,9 @@ fmkorder_temp <- function(m, A, b, sigma, S) {
     Sigma <- sigma
   } else {
     tmp <- fmkorder_temp(m - 1L, A, b, sigma, S)
-    mu <- A %*% tmp[["mu"]] + b
-    temp <- tmp[["A"]] %*% A
-    Sigma <- tmp[["Sigma"]] + t(temp) %*% sigma %*% temp
+    mu <- A %*% tmp[[1L]] + b                       ## tmp[["mu"]]
+    temp <- tmp[[3L]] %*% A                         ## tmp[["A"]]
+    Sigma <- tmp[[2L]] + t(temp) %*% sigma %*% temp ## tmp[["Sigma"]]
     A <- temp
   }
   list(mu = mu, Sigma = Sigma, A = A)
@@ -74,10 +74,10 @@ fmkorder_temp <- function(m, A, b, sigma, S) {
 
 fmkorder <- function(m, A, b, sigma, S) {
   temp <- fmkorder_temp(m, A, b, sigma, S)
-  Sigma <- temp[["Sigma"]]
+  Sigma <- temp[[2L]]
   Sigma <- solve(Sigma)
-  temp[["mu"]] <- c(temp[["mu"]])
-  temp[["Sigma"]] <- Sigma
+  temp[[1L]] <- c(temp[[1L]])  ## temp[["mu"]]
+  temp[[2L]] <- Sigma
   temp
 }
 
@@ -147,7 +147,7 @@ tranS <- local({
           (t(t(x[1] * S %*% angle2mat(x[2:4])) + x[5:7]) - S2)^2
         )))
       })
-       tmp <- tmp[["par"]]
+      tmp <- tmp[["par"]]
       S <- t(t(tmp[1] * S %*% angle2mat(tmp[2:4])) + tmp[5:7])
     } else {
       tmp <- optim(zeros_9, fn = function(x) {
@@ -314,16 +314,16 @@ loglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos = NULL, v = NUL
   if (is.null(mak)) {
     L <- L + sum(unlist(lapply(2:N, FUN = function(ii) {
       nmp <- fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
-      R_ii <- P[ii, ] - nmp[["mu"]]
-      Sigma <- nmp[["Sigma"]]
+      R_ii <- P[ii, ] - nmp[[1L]] ## npm[["mu"]]
+      Sigma <- nmp[[2L]]          ## npm[["Sigma"]]
       -R_ii %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
     }), recursive = FALSE, use.names = FALSE)) / (3 * N)
   } else {
     L <- L + sum(unlist(lapply(2:N, FUN = function(ii) {
       mak_ii1 <- mak[[ii - 1L]]
-      mu <- mak_ii1[["mu"]]
-      Sigma <- mak_ii1[["Sigma"]]
-      A <- mak_ii1[["A"]]
+      mu <- mak_ii1[[1L]]     ## mak_ii1[["mu"]]
+      Sigma <- mak_ii1[[2L]]  ## mak_ii1[["Sigma"]]
+      A <- mak_ii1[[3]]       ## mak_ii1[["A"]]
       mu <- mu + A %*% P[ii - 1L, ]
       R_ii <- P[ii, ] - mu
       -t(R_ii) %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
@@ -368,17 +368,17 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
     
     temp1 <- sapply2(2:N, FUN = function(ii) {
       nmp_iim1 <- nmp[[ii - 1L]]
-      mu <- nmp_iim1[["mu"]]
-      Sigma <- nmp_iim1[["Sigma"]]
+      mu <- nmp_iim1[[1L]]    ## nmp_ii1[["mu"]]
+      Sigma <- nmp_iim1[[2L]] ## nmp_ii1[["Sigma"]]
       -t(P[ii, ] - mu) %*% Sigma
     }) / (3 * N)
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
     
     temp2 <- sapply2(1:(N - 1L), FUN = function(ii) {
       nmp_ii <- nmp[[ii]]
-      mu <- nmp_ii[["mu"]]
-      Sigma <- nmp_ii[["Sigma"]]
-      A <- nmp_ii[["A"]]
+      mu <- nmp_ii[[1L]]    ## nmp_ii1[["mu"]]
+      Sigma <- nmp_ii[[2L]] ## nmp_ii1[["Sigma"]]
+      A <- nmp_ii[[3L]]     ## nmp_ii1[["A"]]
       T <- A %*% P[ii, ]
       U <- t(A) %*% Sigma
       -U %*% T - U %*% (mu - T - P[ii + 1L, ])
@@ -387,18 +387,18 @@ dloglikelihood <- function(P0, A, b, invSigma, beta, cx, mat, pos, v = NULL, mak
   } else {
     temp1 <- sapply2(2:N, FUN = function(ii) {
       mak_ii1 <- mak[[ii - 1L]]
-      mu <- mak_ii1[["mu"]]
-      Sigma <- mak_ii1[["Sigma"]]
-      A <- mak_ii1[["A"]]
+      mu <- mak_ii1[[1L]]    ## mak_ii1[["mu"]]
+      Sigma <- mak_ii1[[2L]] ## mak_ii1[["Sigma"]]
+      A <- mak_ii1[[3L]]     ## mak_ii1[["A"]]
       mu <- mu + A %*% P[ii - 1L, ]
       -t(P[ii, ] - mu) %*% Sigma
     }) / (3 * N)
     dL[2:N, ] <- dL[2:N, ] + t(temp1)
     temp2 <- sapply2(1:(N - 1L), FUN = function(ii) {
       mak_ii <- mak[[ii]]
-      mu <- mak_ii[["mu"]]
-      Sigma <- mak_ii[["Sigma"]]
-      A <- mak_ii[["A"]]
+      mu <- mak_ii[[1L]]    ## mak_ii[["mu"]]
+      Sigma <- mak_ii[[2L]] ## mak_ii[["Sigma"]]
+      A <- mak_ii[[3L]]     ## mak_ii[["A"]]
       U <- t(A) %*% Sigma
       -U %*% A %*% P[ii, ] - U %*% (mu - P[ii + 1L, ])
     }) / (3 * N)
@@ -418,8 +418,8 @@ mkcloglikelihood <- function(theta, P0) {
   sigma <- solve(invSigma)
   temp <- sapply2(2:N, FUN = function(ii) {
     nmp <- fmkorder(P0[ii, 1] - P0[ii - 1L, 1], A = A, b = b, sigma = sigma, S = P[ii - 1L, ])
-    R_ii <- P[ii, ] - nmp[["mu"]]
-    Sigma <- nmp[["Sigma"]]
+    R_ii <- P[ii, ] - nmp[[1L]] ## npm[["mu"]]
+    Sigma <- nmp[[2L]]          ## npm[["Sigma"]]
     -R_ii %*% Sigma %*% R_ii / 2 + log_det(Sigma) / 2
   })
   mean(temp) / 3
