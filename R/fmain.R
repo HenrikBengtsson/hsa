@@ -268,7 +268,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
 
     if (mkfix && iternum >= 5L) {
       P0 <- cbind(pbin, P)
-      thetam <- optim(c(as.vector(A0), b0, as.vector(upper_triangle(invSigma0, diag = TRUE))), fn = function(theta) -mkcloglikelihood(theta, P0 = P0))
+      thetam <- optim(c(as.vector(A0), b0, upper_triangle(invSigma0, diag = TRUE)), fn = function(theta) -mkcloglikelihood(theta, P0 = P0))
       thetam <- thetam[["par"]]
 
       A <- matrix(thetam[1:9], nrow = 3L, ncol = 3L)

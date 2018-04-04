@@ -427,6 +427,7 @@ mkcloglikelihood <- function(theta, P0) {
 
 #' @importFrom matrixStats t_tx_OP_y
 dhllk <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
+  ## HB: This is very convoluted; candidate for speed up
   P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, args = sapply2(2:dim(index)[1], FUN = function(x) {
     t(t(P0[index[x, 1]:index[x, 2], -1] %*% matrix(theta[x - 1L, 1:9], nrow = 3L, ncol = 3L)) + theta[x - 1L, 10:12])
   })))
@@ -546,6 +547,7 @@ dDtotheta <- function(p, b_t, temp) {
 #' @importFrom matrixStats t_tx_OP_y
 dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NULL) {
   matheta <- lapply(2:dim(index)[1], FUN = function(x) rotamat(theta[x - 1L, ]))
+  ## HB: This is very convoluted; candidate for speed up
   P <- rbind(P0[index[1, 1]:index[1, 2], -1], do.call(rbind, args = sapply2(2:dim(index)[1], FUN = function(x) {
     t(t(P0[index[x, 1]:index[x, 2], -1] %*% matheta[[x - 1L]][, 1:3]) + theta[x - 1L, 4:6])
   })))
@@ -576,7 +578,7 @@ dhllk1 <- function(index, theta, P0, A, b, invSigma, beta, cx, mat, pos, v = NUL
   dD[, , 3] <- t(tmp) - tmp
   dL[, 1:3] <- t(sapply2(2:dim(index)[1], FUN = function(x) {
     idxs <- index[x, 1]:index[x, 2]
-    rowSums(sapply2(idxs, FUN = function(i) colSums(dDtotheta(P0[i, -1], b = t(P[-idxs, ]) - theta[x - 1, 4:6], temp = matheta[[x - 1]]) * temp[-idxs, i])))
+    rowSums(sapply2(idxs, FUN = function(i) colSums(dDtotheta(P0[i, -1], b_t = t(P[-idxs, ]) - theta[x - 1, 4:6], temp = matheta[[x - 1]]) * temp[-idxs, i])))
   }))
   index_rn1 <- index[-1, ]
   dL[, 4] <- apply(index_rn1, MARGIN = 1L, FUN = function(x) {
