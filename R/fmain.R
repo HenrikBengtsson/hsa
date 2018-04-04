@@ -332,7 +332,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       tmp_opt <- optim(c(1, beta1), fn = function(x) -floglike(cbind(pbin, x[1] * Pf), A, b, invSigma, x[-1], covmat0, mat, pos, v, mak))
       sLoglike <- -tmp_opt[["value"]]
       cat("LLK before and after smoothing:", c(Loglike, sLoglike), "(", tmp_opt[["par"]], ")", "\n")
-      if (!(Loglike > sLoglike || (any(beta2 > -1) && runif(1) < 0.5))) {
+      if (!(Loglike > sLoglike || (any(beta2 > -1) && runif(1L) < 0.5))) {
         Loglike <- sLoglike
         beta1 <- tmp_opt[["par"]]
         P <- beta1[1] * matrix(Pf, nrow = N, ncol = 3L)
@@ -341,7 +341,7 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     } else {
       sLoglike <- floglike(cbind(pbin, Pf), A, b, invSigma, beta1, covmat0, mat, pos, v, mak)
       cat("LLK before and after smoothing:", c(Loglike, sLoglike), "\n")
-      if (!(Loglike > sLoglike || (any(beta2 > -1) && runif(1) < 0.5))) {
+      if (!(Loglike > sLoglike || (any(beta2 > -1) && runif(1L) < 0.5))) {
         Loglike <- sLoglike
         P <- matrix(Pf, nrow = N, ncol = 3L)
       }

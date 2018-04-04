@@ -48,7 +48,7 @@ finistructure <- function(S0, bin) {
     Y <- rbind(S0_c35, rnorm(3, mean = S0_c35[n, ], sd = colSds(S0_c35[-1, ] - S0_c35[-n, ])))
     bin_c1 <- bin[, 1]
     S <- normP(sapply2(1:3, FUN = function(x) splinefun(pts, Y[, x])(bin_c1)))
-    S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5 / N)), nrow = N, ncol = 3L)
+    S <- S + matrix(rnorm(3 * N, mean = 0, sd = sqrt(5/N)), nrow = N, ncol = 3L)
   }
   S
 }
@@ -646,7 +646,7 @@ HMC <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE) 
     cat("NA or inf produced!!", "\n")
     return(rmol(1:N, P = current_q))
   } else {
-    if (runif(1) < exp((const) / T0)) {
+    if (runif(1L) < exp((const) / T0)) {
       if (I_trans) {
         q <- rmol(1:N, P = q)
         q <- tranS(q, S2 = current_q)
@@ -681,7 +681,7 @@ HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
   current_K <- fK(current_p) / 2
   proposed_U <- U(q)
   proposed_K <- fK(p) / 2
-  const <- (current_U - proposed_U) / log(runif(1) * 0.5)
+  const <- (current_U - proposed_U) / log(runif(1L) * 0.5)
   const <- ifelse(const > 0, const, 1)
 
   # Accept or reject the state at end of trajectory, returning either
@@ -690,7 +690,7 @@ HMC1 <- function(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)
     cat("NA or inf produced!!", "\n")
     return(rmol(1:N, P = current_q))
   } else {
-    if (runif(1) < exp((const) / T0 / const)) {
+    if (runif(1L) < exp((const) / T0 / const)) {
       if (I_trans) {
         q <- rmol(1:N, P = q)
         q <- tranS(q, S2 = current_q)
@@ -709,7 +709,7 @@ Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
     pbin_t <- pbin[1:2]
     cx_t <- cx[1:2, 1:2, ]
     mat_t <- mat[1:2, 1:3, ]
-    Padd <- optim(b + rnorm(3, sd = 1 / 5) + q0, fn = function(q) {
+    Padd <- optim(b + rnorm(3L, sd = 1/5) + q0, fn = function(q) {
       fL(cbind(pbin_t, rbind(q0, q)), A, b, invSigma, beta, cx_t, mat_t)
     })
     return(rbind(q0, t(Padd[["par"]])))
@@ -718,7 +718,7 @@ Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
     pbin_t <- pbin[1:N]
     cx_t <- cx[1:N, 1:N, ]
     mat_t <- mat[1:N, 1:(N + 1L), ]
-    Padd <- optim(rnorm(3, sd = 1 / 5) + A %*% temp[dim(temp)[1], ] + b, fn = function(q) {
+    Padd <- optim(rnorm(3L, sd = 1/5) + A %*% temp[dim(temp)[1], ] + b, fn = function(q) {
       fL(cbind(pbin_t, rbind(temp, q)), A, b, invSigma, beta, cx_t, mat_t)
     })
     return(rbind(temp, t(Padd[["par"]])))
@@ -745,7 +745,7 @@ Sis <- function(d, pbin, A, b, invSigma, beta, cx0, mat0, q0, fL) {
     temp_t <- temp[(nrow - d + 1L):nrow, ]
     cx_t <- cx[idxs, idxs, ]
     mat_t <- mat[idxs, c(1, (N - d + 1L):(N + 1L)), ]
-    addq <- optim(rnorm(3, sd = 1 / 5) + A %*% temp[nrow, ] + b, fn = function(x) {
+    addq <- optim(rnorm(3L, sd = 1/5) + A %*% temp[nrow, ] + b, fn = function(x) {
       fL(cbind(pbin_t, rbind(temp_t, x)), A, b, invSigma, beta, cx_t, mat_t)
     })
     addq <- addq[["par"]]
@@ -816,42 +816,4 @@ suboptimz <- function(pbin, P0, A0, b0, invSigma0, beta1, covmat0, mat, floglike
 piece <- function(theta0, P1, P2, pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike) {
   theta <- matrix(theta0, nrow = 4L, ncol = 3L)
   -floglike(cbind(pbin, rbind(P1, t(t(P2 %*% theta[-4, ]) + theta[4, ]))), A0, b0, invSigma0, beta1, covmat0, mat)
-}
-
-#' @importFrom stats optim rnorm
-finital <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, fdloglike) {
-  N <- length(pbin)
-  if (N <= 500) {
-    P <- Sis(5, pbin, A0, b0, invSigma0, beta1, covmat0, mat, c(0, 0, 0), function(x, ...) -loglikelihood(x, ...))
-  } else {
-    if (N > 500 && N <= 2000) {
-      m <- 100
-    } else {
-      m <- 200
-    }
-    index <- cbind(c(1, seq(from = m, to = N - m, by = m)), c(seq(from = m, to = N - m, by = m), N))
-    index[-1, 1] <- index[-1, 1] + 1L
-    lP <- lapply(1:dim(index)[1], FUN = function(x) {
-      idxs <- index[x, 1]:index[x, 2]
-      subinitial(pbin[idxs], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, c(1, idxs + 1L), ], floglike, fdloglike)
-    })
-    P <- matrix(0, nrow = N, ncol = 3L)
-    P[index[1, 1]:index[1, 2], ] <- lP[[1]]
-    for (i in 2:dim(index)[1]) {
-      index_ri_c1 <- index[i, 1]
-      index_ri_c2 <- index[i, 2]
-      idxs <- 1:index_ri_c2
-      P_i <- P[1:(index[i - 1, 2]), ]
-      pbin_i <- pbin[idxs]
-      lP_i <- lP[[i]]
-      covmat0_i <- covmat0[idxs, idxs, ]
-      mat_i <- mat[idxs, 1:(index_ri_c2 + 1L), ]
-      theta <- optim(as.vector(rbind(diag(3), P[index[i - 1, 2], ] - P[index_ri_c1, ] + rnorm(3, sd = 1 / 100))), fn = function(x) {
-        piece(x, P_i, lP_i, pbin_i, A0, b0, invSigma0, beta1, covmat0_i, mat_i, floglike)
-      })
-      theta <- matrix(theta[["par"]], nrow = 4L, ncol = 3L)
-      P[index_ri_c1:index_ri_c2, ] <- lP_i %*% theta[-4, ] + rep(1, times = index_ri_c2 - index_ri_c1 + 1L) %*% t(theta[4, ])
-    }
-  }
-  avsmth(pbin, P = P)
 }
