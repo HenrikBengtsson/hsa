@@ -14,6 +14,7 @@ mak <- 1L
 Iscovfile <- FALSE
 K <- 1L
 lscov0 <- 0L
+Leapfrog <- as.integer(Sys.getenv("HSA_LEAPFROG", 5))
 
 data <- read.table(file = contacts, header = FALSE)
 data <- as.matrix(data)
@@ -28,8 +29,9 @@ options(digits = 7L, scipen = 0L) ## Reproducible print() output
 ## commit ccc77de: ~265 secs
 dt <- system.time({
   out <- fmain(lsmap0 = lsmap0, lscov0 = lscov0, outfile = outprefix,
-               Maxiter = 3L, submaxiter = 100L, lambda = 25, Leapfrog = 20,
-               epslon = 0.003, mkfix = 0, rho = 0, mk = mak)
+               Maxiter = 3L, submaxiter = 100L, lambda = 25,
+               Leapfrog = Leapfrog, epslon = 0.003, mkfix = 0,
+               rho = 0, mk = mak)
 })
 print(out)
 cat("\n\n")

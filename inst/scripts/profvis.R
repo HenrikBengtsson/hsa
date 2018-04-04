@@ -1,7 +1,12 @@
 library("hsa")
 
 library("profvis")
-`[.profvis` <- function(x, i, ...) { prof <- x$x$message$prof; prof <- prof[i, ...]; x$x$message$prof <- prof; x }
+`[.profvis` <- function(x, i, ...) {
+  prof <- x$x$message$prof
+  prof <- prof[i, ...]
+  x$x$message$prof <- prof
+  x
+}
 
 outpath <- file.path("tests", ".checks", "profvis")
 dir.create(outpath, recursive = TRUE, showWarnings = FALSE)
@@ -16,6 +21,7 @@ contacts <- file.path(path, "contact_hap1_full_all_22_100000.txt")
 data <- read.table(file = contacts, header = FALSE)
 data <- as.matrix(data)
 lsmap0 <- list(data)
+Leapfrog <- as.integer(Sys.getenv("HSA_LEAPFROG", 5))
 
 set.seed(12345)
 
@@ -26,8 +32,9 @@ options(digits = 7L, scipen = 0L) ## Reproducible print() output
 ## commit ccc77de: ~265 secs
 pv <- profvis::profvis({
   out <- fmain(lsmap0 = lsmap0, lscov0 = 0L, outfile = outprefix,
-               Maxiter = 1L, submaxiter = 100L, lambda = 25, Leapfrog = 20,
-               epslon = 0.003, mkfix = 0, rho = 0, mk = 1L)
+               Maxiter = 1L, submaxiter = 100L, lambda = 25,
+               Leapfrog = Leapfrog, epslon = 0.003, mkfix = 0,
+               rho = 0, mk = 1L)
 })
 print(out)
 cat("\n\n")
