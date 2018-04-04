@@ -719,7 +719,8 @@ Qsis <- function(N, pbin, A, b, invSigma, beta, cx, mat, q0, fL) {
     })
     return(rbind(q0, t(Padd[["par"]])))
   } else {
-    temp <- Qsis(N - 1L, pbin, A, b, invSigma, beta, cx, mat, q0, fL)
+    temp <- Qsis(N = N - 1L, pbin = pbin, A = A, b = b, invSigma = invSigma,
+                 beta = beta, cx = cx, mat = mat, q0 = q0, fL = fL)
     pbin_t <- pbin[1:N]
     cx_t <- cx[1:N, 1:N, ]
     mat_t <- mat[1:N, 1:(N + 1L), ]
@@ -741,9 +742,12 @@ Sis <- function(d, pbin, A, b, invSigma, beta, cx0, mat0, q0, fL) {
     mat <- mat0
   }
   if (N == d) {
-    return(Qsis(d, pbin, A, b, invSigma, beta, cx, mat, q0, fL))
+    return(Qsis(N = d, pbin = pbin, A = A, b = b, invSigma = invSigma,
+                beta = beta, cx = cx, mat = mat, q0 = q0, fL = fL))
   } else {
-    temp <- Sis(d, pbin[-N], A, b, invSigma, beta, cx[-N, -N, ], mat[-N, -(N + 1L), ], q0, fL)
+    temp <- Sis(d = d, pbin = pbin[-N], A = A, b = b, invSigma = invSigma,
+                beta = beta, cx0 = cx[-N, -N, ], mat0 = mat[-N, -(N + 1L), ],
+                q0 = q0, fL = fL)
     idxs <- (N - d):N
     pbin_t <- pbin[idxs]
     nrow <- nrow(temp)
@@ -768,7 +772,9 @@ subinitial <- function(pbin, A0, b0, invSigma0, beta1, covmat0, mat, floglike, f
   if (!is.list(pos)) {
     pos <- lapply(1:ncol(pos), FUN = function(i) pos[, i])
   }
-  P0 <- Sis(4, pbin, A0, b0, invSigma0, beta1, covmat0, mat, c(0, 0, 0), function(x, ...) -loglikelihood(x, ...))
+  P0 <- Sis(d = 4, pbin = pbin, A = A0, b = b0, invSigma = invSigma0,
+            beta = beta1, cx0 = covmat0, mat0 = mat, q0 = c(0, 0, 0),
+            fL = function(x, ...) -loglikelihood(x, ...))
   u <- 0L
   while (u < 100L) {
     ## HMC(U, grad_U, epsilon, L, current_q0, T0, fK, fM, I_trans = FALSE)

@@ -59,7 +59,9 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     }
 
     if (is.null(initialS)) {
-      P10 <- finital(pbin, A0, b0, invS, beta1, covmat0, mat, floglike, fdloglike)
+      P10 <- finital(pbin = pbin, A0 = A0, b0 = b0, invSigma0 = invS,
+                     beta1 = beta1, covmat0 = covmat0, mat = mat,
+                     floglike = floglike, fdloglike = fdloglike)
     } else {
       P10 <- finistructure(initialS, bin = bin)
     }
@@ -115,7 +117,9 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     }
 
     if (is.null(initialS)) {
-      P10 <- finital(pbin, A0, b0, invS, beta1, covmat0, mat, floglike, fdloglike)
+      P10 <- finital(pbin = pbin, A0 = A0, b0 = b0, invSigma0 = invS,
+                     beta1 = beta1, covmat0 = covmat0, mat = mat,
+                     floglike = floglike, fdloglike = fdloglike)
     } else {
       P10 <- finistructure(initialS, bin = bin)
     }
@@ -165,7 +169,12 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     Psub <- P01
     Psub <- do.call(rbind, args = lapply(1:dim(index)[1], FUN = function(x) {
       idxs <- index[x, 1]:index[x, 2]
-      tranS(suboptimz(pbin[idxs], P01[idxs, ], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, c(1L, idxs + 1L), ], floglike, fdloglike, 0), S2 = P01[idxs, ])
+      tranS(suboptimz(pbin = pbin[idxs], P0 = P01[idxs, ], A0 = A0, b0 = b0,
+                      invSigma0 = invSigma0, beta1 = beta1,
+                      covmat0 = covmat0[idxs, idxs, ],
+                      mat = mat[idxs, c(1L, idxs + 1L), ],
+                      floglike = floglike, fdloglike = fdloglike, I_mle = 0),
+            S2 = P01[idxs, ])
     }))
     Logsub <- floglike(cbind(pbin, Psub), A0, b0, invSigma0, beta1, covmat0, mat)
     cat("LLK after suboptimization: ", Logsub, "\n")
@@ -173,7 +182,13 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
       P01 <- Psub
       Loglike0 <- Logsub
     }
-    Pframe <- tranS(suboptimz(pbin[index2], P01[index2, ], A0, b0, invSigma0, beta1, covmat0[index2, index2, ], mat[index2, c(1L, index2 + 1L), ], floglike, fdloglike, 0), S2 = P01[index2, ])
+    Pframe <- tranS(suboptimz(pbin = pbin[index2], P0 = P01[index2, ], A0 = A0,
+                              b0 = b0, invSigma0 = invSigma0, beta1 = beta1,
+                              covmat0 = covmat0[index2, index2, ],
+                              mat = mat[index2, c(1L, index2 + 1L), ],
+                              floglike = floglike, fdloglike = fdloglike,
+                              I_mle = 0),
+                    S2 = P01[index2, ])
     Psub2 <- Psub
     for (i_sub in 1:(length(index2) - 1)) {
       idxs2 <- index2[i_sub]:index2[i_sub + 1L]
@@ -296,7 +311,12 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
     if (N > 1000L && iternum < (Maxiter - 5L)) {
       Psub <- do.call(rbind, args = lapply(1:dim(index)[1], FUN = function(x) {
         idxs <- index[x, 1]:index[x, 2]
-        tranS(suboptimz(pbin[idxs], P[idxs, ], A0, b0, invSigma0, beta1, covmat0[idxs, idxs, ], mat[idxs, c(1L, idxs + 1L), ], floglike, fdloglike, 0), S2 = P[idxs, ])
+        tranS(suboptimz(pbin = pbin[idxs], P0 = P[idxs, ], A0 = A0, b0 = b0,
+                        invSigma0 = invSigma0, beta1 = beta1,
+                        covmat0 = covmat0[idxs, idxs, ],
+                        mat = mat[idxs, c(1L, idxs + 1L), ],
+                        floglike = floglike, fdloglike = fdloglike, I_mle = 0),
+              S2 = P[idxs, ])
       }))
       Logsub <- floglike(cbind(pbin, Psub), A0, b0, invSigma0, beta1, covmat0, mat)
       cat("LLK after suboptimization: ", Logsub, "\n")
@@ -304,7 +324,13 @@ fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog
         P <- Psub
         usLoglike <- Logsub
       }
-      Pframe <- tranS(suboptimz(pbin[index2], P[index2, ], A0, b0, invSigma0, beta1, covmat0[index2, index2, ], mat[index2, c(1L, index2 + 1L), ], floglike, fdloglike, 0), S2 = P[index2, ])
+      Pframe <- tranS(suboptimz(pbin = pbin[index2], P0 = P[index2, ], A0 = A0,
+                                b0 = b0, invSigma0 = invSigma0, beta1 = beta1,
+                                covmat0 = covmat0[index2, index2, ],
+                                mat = mat[index2, c(1L, index2 + 1L), ],
+                                floglike = floglike, fdloglike = fdloglike,
+                                I_mle = 0),
+                      S2 = P[index2, ])
       Psub2 <- P
       for (i_sub in 1:(length(index2) - 1)) {
         idxs2 <- index2[i_sub]:index2[i_sub + 1L]
