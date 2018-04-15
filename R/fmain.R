@@ -1,6 +1,39 @@
-# Publications that use results obtained from this software please include a citation of the paper:
-# Zou, C., Zhang, Y., Ouyang, Z. (2016) HSA: integrating multi-track Hi-C data for genome-scale reconstruction of 3D chromatin structure. Submitted.
-
+#' Run HSA
+#'
+#' This `fmain()` function is an tidied-up and packaged version of the one
+#' available in the R scripts provided by Zuo et al. (2016) available from
+#' the authors website \url{http://ouyanglab.jax.org/hsa/}.
+#' For details on usage, please see the instructions provided by the authors
+#' at their website.
+#'
+#' @param lsmap0 To be documented.
+#' @param lscov0 To be documented.
+#' @param outfile To be documented.
+#' @param Maxiter To be documented.
+#' @param submaxiter To be documented.
+#' @param lambda To be documented.
+#' @param Leapfrog To be documented.
+#' @param epslon To be documented.
+#' @param mkfix To be documented.
+#' @param rho To be documented.
+#' @param mk To be documented.
+#' @param initialS To be documented.
+#' @param coarsefit To be documented.
+#' @param rmoutlier To be documented.
+#' @param fitmode To be documented.
+#'
+#' @return A named list with elements `Ao`, `bo`, `invSigmao`, `Po`,
+#' and `betao`.
+#'
+#' @references
+#' Zou C, Zhang Y, Ouyang Z. (2016) HSA: integrating multi-track Hi-C data
+#' for genome-scale reconstruction of 3D chromatin structure.
+#' Genome Biology, 17:40.
+#' \href{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4774023/}{PMC4774023}
+#'
+#' @seealso
+#' \url{http://ouyanglab.jax.org/hsa/}
+#'
 #' @importFrom stats glm optim poisson runif
 #' @export
 fmain <- function(lsmap0, lscov0, outfile, Maxiter, submaxiter, lambda, Leapfrog, epslon, mkfix = 0, rho = 0, mk, initialS = NULL, coarsefit = TRUE, rmoutlier = FALSE, fitmode = 0) {
