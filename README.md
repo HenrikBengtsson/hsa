@@ -11,3 +11,8 @@ The R package **hsa** is only available on [GitHub](https://github.com/HenrikBen
 remotes::install_github("HenrikBengtsson/hsa")
 ```
 This will install the package from source.  
+
+To maximize the performance, the develop version of [matrixStats](https://github.com/HenrikBengtsson/matrixStats/tree/develop) (>= 0.53.0-9000) should also be installed:
+```r
+remotes::install_github("HenrikBengtsson/matrixStats@develop")
+```
