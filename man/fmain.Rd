@@ -46,7 +46,7 @@ and \code{betao}.
 \description{
 This \code{fmain()} function is an tidied-up and packaged version of the one
 available in the R scripts provided by Zuo et al. (2016) available from
-the authors website \url{http://ouyanglab.jax.org/hsa/}.
+the authors' website \url{http://ouyanglab.jax.org/hsa/}.
 For details on usage, please see the instructions provided by the authors
 at their website.
 }

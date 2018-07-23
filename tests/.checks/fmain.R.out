@@ -400,9 +400,9 @@ Files produced:
 
 
 
-R version 3.4.4 (2018-03-15)
+R version 3.5.1 (2018-07-02)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 16.04.4 LTS
+Running under: Ubuntu 16.04.5 LTS
 
 Matrix products: default
 BLAS: /usr/lib/atlas-base/atlas/libblas.so.3.0
@@ -415,17 +415,16 @@ locale:
 [10] LC_TELEPHONE=C             LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 
 attached base packages:
-[1] stats     graphics  grDevices utils     datasets  base     
+[1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] hsa_0.0.0-9000
+[1] hsa_0.1.0-9000
 
 loaded via a namespace (and not attached):
-[1] MASS_7.3-49             compiler_3.4.4          tools_3.4.4            
-[4] matrixStats_0.53.1-9000
+[1] MASS_7.3-50        compiler_3.5.1     tools_3.5.1        matrixStats_0.54.0
 
 Processing time:
    user  system elapsed 
-199.436   0.128 199.577 
+178.644   0.208 178.944 
 
 Validation:
