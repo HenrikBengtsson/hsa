@@ -1,12 +1,12 @@
 Package: hsa
-Version: 0.1.0-9000
+Version: 0.1.1
 Depends:
     R (>= 3.3.0),
 Imports:
     stats,
     utils,
     MASS,
-    matrixStats
+    matrixStats (>= 0.54.0)
 NeedsCompilation: yes
 Title: Integrating Multi-Track Hi-C Data for Genome-Scale Reconstruction of 3D Chromatin Structure (A Non-official R Package)
 Authors@R: c(person("Henrik", "Bengtsson", role=c("aut", "cre", "cph"),
