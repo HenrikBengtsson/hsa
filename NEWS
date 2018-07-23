@@ -1,6 +1,11 @@
 hsa
 ===
 
+Version: 0.1.1 [2018-07-23]
+
+ o Now require matrixStats (>= 0.54.0) because it is faster.
+ 
+
 Version: 0.1.0 [2018-04-15]
 
 NEW FEATURES:
